@@ -39,4 +39,36 @@ export async function middleware(request: NextRequest) {
     role = data?.role
   }
 
-  const { pathname } = request.nextUr
+  const { pathname } = request.nextUrl
+
+  // If not logged in and trying to access protected routes → redirect to login
+  if (!user && (
+    pathname.startsWith('/blog/new') ||
+    pathname.startsWith('/dashboard')
+  )) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // If logged in and trying to access auth pages → redirect to home
+  if (user && (pathname === '/login' || pathname === '/register')) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  // Admin only routes
+  if (pathname.startsWith('/dashboard/admin') && role !== 'admin') {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  // Author + Admin only routes
+  if (pathname.startsWith('/blog/new') && !['author', 'admin'].includes(role)) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
