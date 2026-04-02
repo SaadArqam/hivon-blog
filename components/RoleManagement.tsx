@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ROLES, getRoleBadgeClasses, getRoleDisplayName } from '@/lib/rbac'
+import type { Role } from '@/types'
 import { toast } from 'sonner'
 import type { User } from '@/types'
 
@@ -14,7 +15,7 @@ interface Props {
 export default function RoleManagement({ users, onUserUpdated }: Props) {
   const [loading, setLoading] = useState<string | null>(null)
 
-  async function updateUserRole(userId: string, newRole: string) {
+  async function updateUserRole(userId: string, newRole: Role) {
     setLoading(userId)
     
     try {
@@ -41,7 +42,7 @@ export default function RoleManagement({ users, onUserUpdated }: Props) {
         throw new Error(error.error || 'Failed to update role')
       }
 
-      toast.success(`User role updated to ${getRoleDisplayName(newRole as any)}`)
+  toast.success(`User role updated to ${getRoleDisplayName(newRole)}`)
       onUserUpdated()
     } catch (error) {
       console.error('Failed to update user role:', error)

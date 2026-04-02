@@ -43,15 +43,16 @@ export default function CommentSection({ postId }: Props) {
   useEffect(() => {
     let mounted = true
     ;(async () => {
-      const { data } = await supabase.auth.getUser()
-      const user = data.user
-      if (!user || !mounted) return
+      const authRes = await supabase.auth.getUser()
+      const user = authRes.data?.user as { id?: string; email?: string } | null
+      if (!user || !mounted || !user.id) return
       setUserId(user.id)
-      const { data: profile } = await supabase
+      const profileRes = await supabase
         .from('users')
         .select('name, role')
         .eq('id', user.id)
         .maybeSingle()
+      const profile = profileRes.data as { name?: string; role?: string } | null
       setUserName(profile?.name ?? user.email ?? 'You')
       setIsAdmin(profile?.role === 'admin')
     })()

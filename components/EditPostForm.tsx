@@ -9,13 +9,13 @@ export default function EditPostForm({ initialPost }: { initialPost: Post }) {
   const supabase = createBrowserClient()
   const [title, setTitle] = React.useState(initialPost.title)
   const [body, setBody] = React.useState(initialPost.body)
-  const [imageUrl, setImageUrl] = React.useState<string | null>(initialPost.image_url ?? null)
+  const [imageUrl] = React.useState<string | null>(initialPost.image_url ?? null)
   const [file, setFile] = React.useState<File | null>(null)
   const [saving, setSaving] = React.useState(false)
 
   async function uploadImage(file: File) {
     const path = `post-images/${Date.now()}-${file.name}`
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('post-images')
       .upload(path, file, { cacheControl: '3600', upsert: false })
     if (error) throw error
@@ -45,9 +45,13 @@ export default function EditPostForm({ initialPost }: { initialPost: Post }) {
       toast.success('Post updated')
       // navigate to post with potentially new slug
       window.location.href = `/blog/${updatedPost.slug}`
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err)
-      toast.error(err.message ?? 'Failed to update')
+      if (err instanceof Error) {
+        toast.error(err.message ?? 'Failed to update')
+      } else {
+        toast.error('Failed to update')
+      }
     } finally {
       setSaving(false)
     }

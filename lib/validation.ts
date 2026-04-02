@@ -65,7 +65,10 @@ export const commentHideSchema = z.object({
 export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown): T {
   try {
     return schema.parse(data)
-  } catch (error: any) {
-    throw new Error(`Validation failed: ${error.message}`)
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      throw new Error(`Validation failed: ${err.message}`)
+    }
+    throw new Error('Validation failed')
   }
 }

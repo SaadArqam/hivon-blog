@@ -22,7 +22,7 @@ export function createClient() {
   )
 }
 
-function createMockSupabaseClient(mockUser: any, mockToken: string) {
+function createMockSupabaseClient(mockUser: unknown, _mockToken: string) {
   const createQueryBuilder = () => {
     const builder = {
       select: () => builder,
@@ -52,9 +52,9 @@ function createMockSupabaseClient(mockUser: any, mockToken: string) {
         data: { subscription: { unsubscribe: () => {} } }
       })
     },
-    from: (table: string) => createQueryBuilder(),
+  from: () => createQueryBuilder(),
     storage: {
-      from: (bucket: string) => ({
+  from: () => ({
         upload: () => Promise.resolve({ data: { path: 'mock-path' }, error: null }),
         getPublicUrl: () => ({ data: { publicUrl: 'https://mock-url.com/image.jpg' } })
       })

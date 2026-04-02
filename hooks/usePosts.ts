@@ -13,11 +13,12 @@ export default function usePosts({ search = '', page = 1 }: Options = {}) {
 	const [posts, setPosts] = useState<Post[]>([])
 	const [loading, setLoading] = useState<boolean>(true)
 	const [error, setError] = useState<string | null>(null)
-	const supabase = createBrowserClient()
+ 
 	const pageSize = 6
 
 	useEffect(() => {
 		let mounted = true
+		const supabase = createBrowserClient()
 		setLoading(true)
 		setError(null)
 
@@ -41,10 +42,13 @@ export default function usePosts({ search = '', page = 1 }: Options = {}) {
 
 				if (error) throw error
 				if (!mounted) return
-				setPosts(data ?? [])
-			} catch (err: any) {
+				setPosts((data ?? []) as Post[])
+			} catch (err: unknown) {
 				console.error('usePosts error', err)
-				if (mounted) setError(err.message ?? 'Failed to load posts')
+				if (mounted) {
+					if (err instanceof Error) setError(err.message ?? 'Failed to load posts')
+					else setError('Failed to load posts')
+				}
 			} finally {
 				if (mounted) setLoading(false)
 			}

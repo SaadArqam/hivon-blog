@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import PostCard from '@/components/PostCard'
+import Link from 'next/link'
 import PostsList from '@/components/PostsList'
 import Skeleton from '@/components/ui/skeleton'
 import { Post } from '@/types'
@@ -15,7 +15,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams
   const search = params.search ?? ''
   const page = parseInt(params.page ?? '1')
-  const tag = params.tag ?? ''
   const from = (page - 1) * POSTS_PER_PAGE
   const to = from + POSTS_PER_PAGE - 1
 
@@ -33,20 +32,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const { data: posts, count } = await query
   const totalPages = Math.ceil((count ?? 0) / POSTS_PER_PAGE)
 
-  function getPaginationHref(p: number) {
-    if (search) {
-      return '/?page=' + p + '&search=' + search
-    }
-    return '/?page=' + p
-  }
-
-  function getPageClass(p: number) {
-    const base = 'px-4 py-2 rounded-lg text-sm font-medium transition-colors '
-    if (p === page) {
-      return base + 'bg-blue-600 text-white'
-    }
-    return base + 'border hover:bg-gray-100'
-  }
+  // pagination UI helpers are handled inside PostsList
 
   return (
     <div className="bg-gray-50">
@@ -77,12 +63,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             Search
           </button>
           {search && (
-            <a
+            <Link
               href="/"
               className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-100 transition-colors"
             >
               Clear
-            </a>
+            </Link>
           )}
         </form>
 

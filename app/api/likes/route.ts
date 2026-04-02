@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const { post_id } = await request.json()
     if (!post_id) return NextResponse.json({ error: 'post_id is required' }, { status: 400 })
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('likes')
       .insert({ post_id, user_id: user.id })
 

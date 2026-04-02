@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import PostCard from '@/components/PostCard'
+import { Post, Comment } from '@/types'
 import { timeAgo } from '@/lib/utils'
 
 export default async function ReaderDashboard() {
@@ -22,6 +23,7 @@ export default async function ReaderDashboard() {
     .eq('status', 'published')
     .order('created_at', { ascending: false })
     .limit(6)
+  const recentPostsTyped = (recentPosts ?? []) as Post[]
 
   // My comments
   const { data: myComments } = await supabase
@@ -31,6 +33,8 @@ export default async function ReaderDashboard() {
     .eq('is_hidden', false)
     .order('created_at', { ascending: false })
     .limit(10)
+  type CommentWithPost = Comment & { post: { title: string; slug: string } }
+  const myCommentsTyped = (myComments ?? []) as CommentWithPost[]
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
@@ -41,7 +45,7 @@ export default async function ReaderDashboard() {
       <section className="mb-8">
         <h2 className="text-lg font-semibold mb-3">Recent Posts</h2>
         <div className="grid grid-cols-3 gap-4">
-          {(recentPosts || []).map((p: any) => (
+          {recentPostsTyped.map((p) => (
             <PostCard key={p.id} post={p} />
           ))}
           {(!recentPosts || recentPosts.length === 0) && (
@@ -53,7 +57,7 @@ export default async function ReaderDashboard() {
       <section>
         <h2 className="text-lg font-semibold mb-3">My Comments</h2>
         <div className="space-y-3">
-          {(myComments || []).map((c: any) => (
+          {myCommentsTyped.map((c) => (
             <div key={c.id} className="bg-white p-4 rounded shadow">
               <div className="text-sm text-gray-500">On <Link href={`/blog/${c.post.slug}`} className="text-blue-600">{c.post.title}</Link></div>
               <div className="text-xs text-gray-500">{timeAgo(c.created_at)}</div>
@@ -61,8 +65,8 @@ export default async function ReaderDashboard() {
             </div>
           ))}
 
-          {(!myComments || myComments.length === 0) && (
-            <p className="text-sm text-gray-500">You haven't commented yet.</p>
+          {(!myCommentsTyped || myCommentsTyped.length === 0) && (
+            <p className="text-sm text-gray-500">You haven&apos;t commented yet.</p>
           )}
         </div>
       </section>

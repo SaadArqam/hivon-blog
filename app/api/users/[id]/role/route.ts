@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { validateRequest } from '@/lib/validation'
 import { z } from 'zod'
 
@@ -7,10 +7,8 @@ const roleUpdateSchema = z.object({
   role: z.enum(['viewer', 'author', 'admin'])
 })
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Prefer createAdminClient wrapper which uses server-side env vars and safer defaults
+const supabaseAdmin = createAdminClient()
 
 export async function PATCH(
   request: NextRequest, 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -17,7 +17,7 @@ import {
 import { toast } from 'sonner'
 import { checkEmailRateLimit, recordEmailAttempt, formatRetryAfter } from '@/lib/rateLimiter'
 import { bypassSupabaseAuth, isDevelopmentBypass } from '@/lib/devAuth'
-import Skeleton from '@/components/ui/skeleton'
+// Skeleton component not used currently
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -26,17 +26,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<'viewer' | 'author'>('viewer')
-  const [rateLimitInfo, setRateLimitInfo] = useState<{ allowed: boolean; retryAfter?: number; remainingAttempts?: number } | null>(null)
-
-  // Check rate limit on email change
-  useEffect(() => {
-    if (email) {
-      const check = checkEmailRateLimit(email)
-      setRateLimitInfo(check)
-    } else {
-      setRateLimitInfo(null)
-    }
-  }, [email])
+  // derive rate limit info from email deterministically to avoid setState-in-effect
+  const rateLimitInfo = email ? checkEmailRateLimit(email) : null
 
   async function handleRegister() {
     if (!name || !email || !password) {
@@ -86,18 +77,15 @@ export default function RegisterPage() {
     recordEmailAttempt(email)
 
     // Step 1: Sign up
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
-
-    if (error) {
-      toast.error(error.message)
+    const signUpResult = await supabase.auth.signUp({ email, password })
+    if (signUpResult.error) {
+      toast.error(signUpResult.error.message)
       setLoading(false)
       return
     }
 
-    if (!data.user) {
+    const createdUser = signUpResult.data?.user as { id?: string } | undefined
+    if (!createdUser || !createdUser.id) {
       toast.error('Signup failed, please try again')
       setLoading(false)
       return
@@ -108,7 +96,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: data.user.id, name, email, role }),
+    body: JSON.stringify({ id: createdUser.id, name, email, role }),
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
@@ -172,7 +160,7 @@ export default function RegisterPage() {
                 <p className="font-medium">⚠️ Rate limit exceeded</p>
                 <p>Please try again in {formatRetryAfter(rateLimitInfo.retryAfter!)}</p>
                 {isDevelopmentBypass() && (
-                  <p className="mt-1 text-blue-600">💡 Development mode: Click "Create Account" again to use bypass</p>
+              <p className="mt-1 text-blue-600">💡 Development mode: Click &quot;Create Account&quot; again to use bypass</p>
                 )}
               </div>
             )}

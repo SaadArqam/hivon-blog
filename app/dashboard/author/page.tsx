@@ -21,12 +21,15 @@ export default async function AuthorDashboard() {
   }
 
   const { data: posts } = await supabase
-    .from<Post>('posts')
+    .from('posts')
     .select('*')
     .eq('author_id', user.id)
     .order('created_at', { ascending: false })
 
-  const postIds = (posts || []).map(p => p.id)
+  // Supabase JS doesn't preserve generic types at runtime; assert the returned rows to Post[] safely
+  const postsTyped = (posts ?? []) as Post[]
+
+  const postIds = postsTyped.map(p => p.id)
 
   const { data: comments } = postIds.length
     ? await supabase.from('comments').select('post_id').in('post_id', postIds)
@@ -44,9 +47,9 @@ export default async function AuthorDashboard() {
   const likesData = (likes || []) as Array<{ post_id: string }>
   likesData.forEach((l) => { likesCountMap[l.post_id] = (likesCountMap[l.post_id] || 0) + 1 })
 
-  const total = posts?.length ?? 0
-  const published = (posts || []).filter(p => p.status === 'published').length
-  const drafts = (posts || []).filter(p => p.status === 'draft').length
+  const total = postsTyped.length
+  const published = postsTyped.filter(p => p.status === 'published').length
+  const drafts = postsTyped.filter(p => p.status === 'draft').length
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
@@ -71,7 +74,7 @@ export default async function AuthorDashboard() {
       </div>
 
       <div className="space-y-4">
-        {(posts || []).map((post: Post) => (
+  {postsTyped.map((post: Post) => (
           <div key={post.id} className="bg-white p-4 rounded shadow">
             <div className="flex items-start justify-between">
               <div>

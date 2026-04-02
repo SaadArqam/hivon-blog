@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -9,23 +9,14 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { checkLoginRateLimit, recordLoginAttempt, formatRetryAfter } from '@/lib/rateLimiter'
-import Skeleton from '@/components/ui/skeleton'
+// Skeleton intentionally not used here
 
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
-  const [rateLimitInfo, setRateLimitInfo] = useState<{ allowed: boolean; retryAfter?: number; remainingAttempts?: number } | null>(null)
-
-  // Check rate limit on email change
-  useEffect(() => {
-    if (form.email) {
-      const check = checkLoginRateLimit(form.email)
-      setRateLimitInfo(check)
-    } else {
-      setRateLimitInfo(null)
-    }
-  }, [form.email])
+  // derive rate limit info from email deterministically to avoid setState-in-effect
+  const rateLimitInfo = form.email ? checkLoginRateLimit(form.email) : null
 
   async function handleLogin() {
     if (!form.email || !form.password) {
@@ -124,8 +115,8 @@ export default function LoginPage() {
         </CardContent>
 
         <CardFooter className="justify-center">
-          <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
+            <p className="text-sm text-gray-600">
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="text-blue-600 hover:underline font-medium">
               Sign up
             </Link>

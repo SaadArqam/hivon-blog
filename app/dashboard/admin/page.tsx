@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import React from 'react'
+import { Post, User, Comment } from '@/types'
 import DeletePostButton from '@/components/DeletePostButton'
 import HideCommentButton from '@/components/HideCommentButton'
 import { canViewAdminDashboard, getRoleBadgeClasses, getRoleDisplayName } from '@/lib/rbac'
@@ -24,15 +25,19 @@ export default async function AdminDashboard() {
     .from('users')
     .select('id, name, email, role, created_at')
 
-  const postsCount = posts?.length ?? 0
-  const commentsCount = comments?.length ?? 0
-  const usersCount = users?.length ?? 0
+  const postsTyped = (posts ?? []) as Post[]
+  const commentsTyped = (comments ?? []) as Comment[]
+  const usersTyped = (users ?? []) as User[]
 
-  const usersMap = new Map<string, any>()
-  users?.forEach(u => usersMap.set(u.id, u))
+  const postsCount = postsTyped.length
+  const commentsCount = commentsTyped.length
+  const usersCount = usersTyped.length
 
-  const postsMap = new Map<string, any>()
-  posts?.forEach(p => postsMap.set(p.id, p))
+  const usersMap = new Map<string, User>()
+  usersTyped.forEach(u => usersMap.set(u.id, u))
+
+  const postsMap = new Map<string, Post>()
+  postsTyped.forEach(p => postsMap.set(p.id, p))
 
   const getStatusBadge = (status: string) => {
     const baseClasses = "px-2 py-1 text-xs rounded-full"
