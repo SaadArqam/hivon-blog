@@ -49,6 +49,9 @@ Thumbs.db
 *.md
 !README.md
 
+# Prevent AI-generated documentation spam
+# Only keep essential documentation and README.md
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
