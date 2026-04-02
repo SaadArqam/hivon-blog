@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { slugify } from '@/lib/utils'
 import { generateSummary } from '@/lib/gemini'
+import { postCreateSchema, validateRequest } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { title, body, image_url, status } = await request.json()
+    const { title, body, image_url, status } = validateRequest(postCreateSchema, await request.json())
 
     if (!title || !body) {
       return NextResponse.json(

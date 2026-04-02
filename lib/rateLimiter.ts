@@ -87,9 +87,9 @@ class RateLimiter {
 
 // Create specific rate limiters for different actions
 export const emailRateLimiter = new RateLimiter(
-  3, // max 3 attempts
-  15 * 60 * 1000, // per 15 minutes
-  30 * 60 * 1000 // block for 30 minutes
+  2, // max 2 attempts
+  5 * 60 * 1000, // per 5 minutes (shorter window)
+  15 * 60 * 1000 // block for 15 minutes (not 60!)
 )
 
 export const loginRateLimiter = new RateLimiter(

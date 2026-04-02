@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { checkLoginRateLimit, recordLoginAttempt, formatRetryAfter } from '@/lib/rateLimiter'
+import Skeleton from '@/components/ui/skeleton'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -83,6 +84,7 @@ export default function LoginPage() {
               value={form.email}
               onChange={e => setForm({ ...form, email: e.target.value })}
               onKeyDown={handleKeyDown}
+              disabled={loading}
               className={rateLimitInfo && !rateLimitInfo.allowed ? 'border-red-500' : ''}
             />
             {rateLimitInfo && !rateLimitInfo.allowed && (
@@ -106,6 +108,7 @@ export default function LoginPage() {
               value={form.password}
               onChange={e => setForm({ ...form, password: e.target.value })}
               onKeyDown={handleKeyDown}
+              disabled={loading}
             />
           </div>
 

@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { checkEmailRateLimit, recordEmailAttempt, formatRetryAfter } from '@/lib/rateLimiter'
+import { bypassSupabaseAuth, isDevelopmentBypass } from '@/lib/devAuth'
+import Skeleton from '@/components/ui/skeleton'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -48,14 +50,40 @@ export default function RegisterPage() {
 
     // Check rate limit
     const rateCheck = checkEmailRateLimit(email)
+    console.log('Rate check:', rateCheck, 'Is dev bypass:', isDevelopmentBypass())
+    
     if (!rateCheck.allowed) {
+      // In development, offer bypass option
+      if (isDevelopmentBypass()) {
+        console.log('Using development bypass...')
+        setLoading(true)
+        const bypassResult = await bypassSupabaseAuth(email, password, name, role)
+        if (bypassResult) {
+          // Skip Supabase call and profile creation for bypass
+          toast.success('Development bypass: Account created successfully!')
+          router.push('/')
+          router.refresh()
+          return
+        } else {
+          setLoading(false)
+          return
+        }
+      }
+      
       toast.error(`Rate limit exceeded. Please try again in ${formatRetryAfter(rateCheck.retryAfter!)}`)
+      setLoading(false)
       return
     }
 
+    console.log('Proceeding with normal Supabase auth...')
     setLoading(true)
-    recordEmailAttempt(email)
+    
+    // Check if we should use mock client for development
     const supabase = createClient()
+    console.log('Supabase client created:', supabase)
+    
+    // Record attempt AFTER checking bypass
+    recordEmailAttempt(email)
 
     // Step 1: Sign up
     const { data, error } = await supabase.auth.signUp({
@@ -115,27 +143,37 @@ export default function RegisterPage() {
 
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Full Name</label>
+            <label className="text-sm font-medium text-gray-700">
+              Full Name
+            </label>
             <Input
               placeholder="John Doe"
               value={name}
               onChange={e => setName(e.target.value)}
+              disabled={loading}
+              className="text-lg"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium text-gray-700">
+              Email
+            </label>
             <Input
               type="email"
               placeholder="john@example.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
+              disabled={loading}
               className={rateLimitInfo && !rateLimitInfo.allowed ? 'border-red-500' : ''}
             />
             {rateLimitInfo && !rateLimitInfo.allowed && (
               <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
                 <p className="font-medium">⚠️ Rate limit exceeded</p>
                 <p>Please try again in {formatRetryAfter(rateLimitInfo.retryAfter!)}</p>
+                {isDevelopmentBypass() && (
+                  <p className="mt-1 text-blue-600">💡 Development mode: Click "Create Account" again to use bypass</p>
+                )}
               </div>
             )}
             {rateLimitInfo && rateLimitInfo.allowed && rateLimitInfo.remainingAttempts !== undefined && (
@@ -152,6 +190,7 @@ export default function RegisterPage() {
               placeholder="Min. 6 characters"
               value={password}
               onChange={e => setPassword(e.target.value)}
+              disabled={loading}
             />
           </div>
 
@@ -159,28 +198,22 @@ export default function RegisterPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium">I want to join as a...</label>
             <div className="grid grid-cols-2 gap-3">
-              <div
+              <Button
                 onClick={() => setRole('viewer')}
-                className={
-                  'p-3 rounded-lg border-2 text-sm font-medium text-center cursor-pointer transition-all ' +
-                  (role === 'viewer'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300')
-                }
+                disabled={loading}
+                variant={role === 'viewer' ? 'default' : 'outline'}
+                className="p-3 text-sm font-medium"
               >
                 👀 Reader
-              </div>
-              <div
+              </Button>
+              <Button
                 onClick={() => setRole('author')}
-                className={
-                  'p-3 rounded-lg border-2 text-sm font-medium text-center cursor-pointer transition-all ' +
-                  (role === 'author'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300')
-                }
+                disabled={loading}
+                variant={role === 'author' ? 'default' : 'outline'}
+                className="p-3 text-sm font-medium"
               >
                 ✍️ Author
-              </div>
+              </Button>
             </div>
             <p className="text-xs text-gray-400 text-center">
               Selected: <span className="font-medium capitalize">{role}</span>
@@ -193,7 +226,7 @@ export default function RegisterPage() {
             disabled={loading || (rateLimitInfo?.allowed === false)}
           >
             {loading ? 'Creating account...' : 
-             rateLimitInfo && !rateLimitInfo.allowed ? 'Rate Limited' : 
+             rateLimitInfo?.allowed === false ? 'Rate Limited (Dev Bypass Available)' : 
              'Create Account'}
           </Button>
         </CardContent>

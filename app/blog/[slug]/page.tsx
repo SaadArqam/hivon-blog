@@ -4,19 +4,17 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { timeAgo, readingTime } from '@/lib/utils'
 import CommentSection from '@/components/CommentSection'
+import { sanitizeHtml, escapeHtml } from '@/lib/sanitize'
 
 interface Props {
   params: { slug: string }
 }
 
 function bodyToHtml(text: string) {
-  const escaped = text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
+  const escaped = escapeHtml(text)
   const paragraphs = escaped
     .split(/\n{2,}/g)
-    .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+    .map(p => `<p>${sanitizeHtml(p.replace(/\n/g, '<br/>'))}</p>`)
     .join('')
   return paragraphs
 }

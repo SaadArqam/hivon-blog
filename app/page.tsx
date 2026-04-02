@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
 import PostCard from '@/components/PostCard'
+import Skeleton from '@/components/ui/skeleton'
 import { Post } from '@/types'
 
 interface HomePageProps {
@@ -87,7 +88,24 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </form>
 
         {/* Posts Grid */}
-        {posts && posts.length > 0 ? (
+        {!posts ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="space-y-4">
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="text-gray-500 text-lg">No posts found</div>
+            <div className="text-gray-400 text-sm mt-2">
+              {search ? `No results for "${search}"` : 'No posts published yet'}
+            </div>
+          </div>
+        ) : (
           <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {posts.map((post) => (
@@ -114,14 +132,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <div className="text-center py-20 text-gray-400">
             <p className="text-5xl mb-4">📭</p>
             <p className="text-lg font-medium">
-              {search ? 'No posts found for "' + search + '"' : 'No posts yet'}
+              {search ? `No posts found for "${search}"` : 'No posts yet'}
             </p>
             <p className="text-sm mt-1">
               {search ? 'Try a different search term' : 'Be the first to write something!'}
             </p>
           </div>
         )}
-
       </main>
     </div>
   )

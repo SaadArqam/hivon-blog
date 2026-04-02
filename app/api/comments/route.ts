@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { commentCreateSchema, commentHideSchema, validateRequest } from '@/lib/validation'
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,8 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { post_id, comment_text } = body
+    const { post_id, comment_text, user_id } = validateRequest(commentCreateSchema, await request.json())
     if (!post_id || !comment_text || String(comment_text).trim() === '') {
       return NextResponse.json({ error: 'post_id and comment_text are required' }, { status: 400 })
     }
@@ -102,7 +102,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { comment_id } = await request.json()
+    const { comment_id } = validateRequest(commentHideSchema, await request.json())
     if (!comment_id) return NextResponse.json({ error: 'comment_id required' }, { status: 400 })
 
     const { error } = await supabase

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils'
+import { postUpdateSchema, validateRequest } from '@/lib/validation'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -19,12 +20,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const updates: any = {}
-    if (typeof body.title === 'string' && body.title.trim() !== '') updates.title = body.title.trim()
-    if (typeof body.body === 'string') updates.body = body.body
-    if (typeof body.image_url === 'string') updates.image_url = body.image_url
-    if (typeof body.status === 'string') updates.status = body.status
+    const updates = validateRequest(postUpdateSchema, await request.json())
 
     // handle slug change if title changed
     if (updates.title && updates.title !== post.title) {
@@ -35,7 +31,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
       updates.slug = newSlug
     }
-
+    
     updates.updated_at = new Date().toISOString()
 
     const { data: updated, error } = await supabase.from('posts').update(updates).eq('id', id).select().maybeSingle()

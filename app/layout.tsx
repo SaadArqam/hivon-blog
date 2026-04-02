@@ -1,13 +1,14 @@
+import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Toaster } from 'sonner'
-import './globals.css'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Hivon Blog',
-  description: 'A modern blogging platform',
+  description: 'A modern blogging platform with AI-powered summaries',
 }
 
 export default function RootLayout({
@@ -18,7 +19,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
+        <ErrorBoundary fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-red-600">Application error. Please refresh the page.</div>
+          </div>
+        }>
+          {children}
+        </ErrorBoundary>
         <Toaster position="top-right" richColors />
       </body>
     </html>
