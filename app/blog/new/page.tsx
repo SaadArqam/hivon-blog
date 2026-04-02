@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Navbar from '@/components/Navbar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
@@ -68,7 +67,7 @@ export default function NewPostPage() {
         body: JSON.stringify({
           title: form.title,
           body: form.body,
-          image_url: imageUrl,
+          image_url: imageUrl || null,
           status,
         }),
       })
@@ -98,9 +97,7 @@ export default function NewPostPage() {
   const wordCount = form.body.trim().split(/\s+/).filter(Boolean).length
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
+    <div className="bg-gray-50">
       <main className="max-w-3xl mx-auto px-4 py-10">
         <div className="bg-white rounded-xl border shadow-sm p-8 space-y-6">
 

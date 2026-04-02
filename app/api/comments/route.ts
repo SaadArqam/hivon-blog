@@ -11,12 +11,21 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    // Fetch top-level comments and their direct replies (one level deep)
     const { data: comments, error } = await supabase
       .from('comments')
-      .select('*')
+      .select(`
+        *,
+        user:users(name),
+        replies:comments!reply_to_id(
+          *,
+          user:users(name)
+        )
+      `)
       .eq('post_id', post_id)
+      .is('reply_to_id', null)
       .eq('is_hidden', false)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
 
     if (error) {
       console.error('Comments fetch error:', error)
@@ -27,19 +36,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ comments: [] })
     }
 
-    // Fetch users for comment authors
-    const userIds = Array.from(new Set(comments.map((c: any) => c.user_id)))
-    const { data: users } = await supabase
-      .from('users')
-      .select('id, name')
-      .in('id', userIds)
-
-    const usersMap = new Map<string, any>()
-    users?.forEach(u => usersMap.set(u.id, u))
-
-    const enriched = comments.map((c: any) => ({ ...c, user: usersMap.get(c.user_id) ?? null }))
-
-    return NextResponse.json({ comments: enriched })
+    return NextResponse.json({ comments })
 
   } catch (err) {
     console.error('Comments GET error:', err)
@@ -55,14 +52,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { post_id, comment_text, user_id } = validateRequest(commentCreateSchema, await request.json())
+    const body = await request.json()
+    const { post_id, comment_text, reply_to_id } = validateRequest(commentCreateSchema, body)
     if (!post_id || !comment_text || String(comment_text).trim() === '') {
       return NextResponse.json({ error: 'post_id and comment_text are required' }, { status: 400 })
     }
 
+    // If replying, validate the parent comment exists and belongs to same post
+    if (reply_to_id) {
+      const { data: parent } = await supabase
+        .from('comments')
+        .select('id, post_id')
+        .eq('id', reply_to_id)
+        .maybeSingle()
+      if (!parent) {
+        return NextResponse.json({ error: 'Parent comment not found' }, { status: 400 })
+      }
+      if (parent.post_id !== post_id) {
+        return NextResponse.json({ error: 'Parent comment does not belong to this post' }, { status: 400 })
+      }
+    }
+
     const { data: comment, error } = await supabase
       .from('comments')
-      .insert({ post_id, user_id: user.id, comment_text, is_hidden: false })
+      .insert({ post_id, user_id: user.id, comment_text, reply_to_id: reply_to_id || null, is_hidden: false })
       .select()
       .single()
 

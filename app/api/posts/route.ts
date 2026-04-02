@@ -48,8 +48,21 @@ export async function POST(request: NextRequest) {
       slug = slug + '-' + Date.now()
     }
 
-    // Generate AI summary (only once on creation)
-    const summary = await generateSummary(body)
+  // Generate AI summary (only once on creation)
+  let summary: string | null = null
+  try {
+    summary = await generateSummary(body)
+    if (!summary) {
+      console.warn('[Posts API] Summary generation returned null')
+    } else {
+      console.log('[Posts API] Summary generated successfully')
+      console.log('[Posts API] Summary wordcount:', summary.split(/\s+/).filter(Boolean).length)
+      console.log('[Posts API] Summary preview:', summary.slice(0, 200))
+    }
+  } catch (err) {
+    console.error('[Posts API] Summary generation error:', err)
+    summary = null
+  }
 
     // Insert post
     const { data: post, error } = await supabase
@@ -59,7 +72,7 @@ export async function POST(request: NextRequest) {
         slug,
         body,
         image_url: image_url || null,
-        summary,
+  summary: summary ?? null,
         author_id: user.id,
         status: status || 'published',
       })

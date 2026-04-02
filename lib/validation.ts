@@ -19,14 +19,30 @@ export const postCreateSchema = z.object({
   title: z.string().min(1).max(200).trim(),
   body: z.string().min(50).max(10000).trim(),
   status: z.enum(['published', 'draft']).default('published'),
-  image_url: z.string().url().nullable().optional()
+  image_url: z.string().nullable().optional().refine((val) => {
+    if (!val || val === '') return true
+    try {
+      new URL(val)
+      return true
+    } catch {
+      return false
+    }
+  }, { message: "Invalid URL format" })
 })
 
 // Post update validation
 export const postUpdateSchema = z.object({
   title: z.string().min(1).max(200).trim().optional(),
   body: z.string().min(50).max(10000).trim().optional(),
-  image_url: z.string().url().nullable().optional(),
+  image_url: z.string().nullable().optional().refine((val) => {
+    if (!val || val === '') return true
+    try {
+      new URL(val)
+      return true
+    } catch {
+      return false
+    }
+  }, { message: "Invalid URL format" }),
   status: z.enum(['published', 'draft']).optional(),
   slug: z.string().optional(),
   updated_at: z.string().optional()
@@ -36,7 +52,8 @@ export const postUpdateSchema = z.object({
 export const commentCreateSchema = z.object({
   post_id: z.string().uuid(),
   comment_text: z.string().min(1).max(1000).trim(),
-  user_id: z.string().uuid().optional()
+  user_id: z.string().uuid().optional(),
+  reply_to_id: z.string().uuid().optional()
 })
 
 // Comment moderation validation

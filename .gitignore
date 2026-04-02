@@ -91,3 +91,39 @@ supabase/.env
 .env.local
 .env.*.local
 *SERVICE_ROLE_KEY*
+
+# Private keys and certificates
+*.key
+*.crt
+*.der
+*.p12
+*.jks
+
+# Google / GCP
+google-credentials.json
+service-account*.json
+
+# AWS
+.aws/credentials
+.aws/config
+*.pem
+
+# Docker
+.docker
+docker-compose.override.yml
+docker-compose.*.yml
+
+# Local DB
+*.sqlite
+*.sqlite3
+*.db
+db.sqlite
+
+# Editor state
+.cache/
+.vscode/*
+.idea/*
+
+# TLS and certs
+certs/
+keys/

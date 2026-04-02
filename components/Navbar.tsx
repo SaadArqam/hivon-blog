@@ -43,6 +43,18 @@ export default function Navbar() {
             </Link>
           )}
 
+          {user?.role === 'author' && (
+            <Link href="/dashboard/author" className="text-sm text-gray-600 hover:text-gray-900">
+              My Posts
+            </Link>
+          )}
+
+          {user?.role === 'viewer' && (
+            <Link href="/dashboard/reader" className="text-sm text-gray-600 hover:text-gray-900">
+              My Activity
+            </Link>
+          )}
+
           {!loading && (
             <>
               {user ? (
@@ -103,6 +115,18 @@ export default function Navbar() {
           {canViewAdminDashboard(user) && (
             <Link href="/dashboard/admin" className="block text-sm text-gray-600" onClick={() => setMenuOpen(false)}>
               Admin Dashboard
+            </Link>
+          )}
+
+          {user?.role === 'author' && (
+            <Link href="/dashboard/author" className="block text-sm text-gray-600" onClick={() => setMenuOpen(false)}>
+              My Posts
+            </Link>
+          )}
+
+          {user?.role === 'viewer' && (
+            <Link href="/dashboard/reader" className="block text-sm text-gray-600" onClick={() => setMenuOpen(false)}>
+              My Activity
             </Link>
           )}
 

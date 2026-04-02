@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import Navbar from '@/components/Navbar'
 import PostCard from '@/components/PostCard'
+import PostsList from '@/components/PostsList'
 import Skeleton from '@/components/ui/skeleton'
 import { Post } from '@/types'
 
@@ -49,9 +49,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
+    <div className="bg-gray-50">
       <main className="max-w-6xl mx-auto px-4 py-10">
 
         {/* Header */}
@@ -107,28 +105,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </div>
           </div>
         ) : (
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {posts.map((post) => (
-                <PostCard key={post.id} post={post as Post} />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-10">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <a
-                    key={p}
-                    href={getPaginationHref(p)}
-                    className={getPageClass(p)}
-                  >
-                    {p}
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+          <PostsList 
+            posts={posts as (Post & { author?: { name: string } })[]}
+            totalPages={totalPages}
+            currentPage={page}
+            search={search}
+          />
         )}
       </main>
     </div>

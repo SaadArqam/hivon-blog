@@ -1,34 +1,50 @@
-"use client"
+ 'use client'
 
-import React from 'react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 
-interface Props {
+interface DeletePostButtonProps {
   postId: string
+  variant?: 'default' | 'small'
 }
 
-export default function DeletePostButton({ postId }: Props) {
-  const [loading, setLoading] = React.useState(false)
+export default function DeletePostButton({ postId, variant = 'default' }: DeletePostButtonProps) {
+  const router = useRouter()
+  const [deleting, setDeleting] = useState(false)
 
   async function handleDelete() {
     if (!confirm('Delete this post? This action cannot be undone.')) return
-    setLoading(true)
+    setDeleting(true)
     try {
-      const res = await fetch(`/api/posts/${postId}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Failed')
-      toast.success('Post deleted')
-      window.location.reload()
+      const res = await fetch('/api/posts/' + postId, { method: 'DELETE' })
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to delete post')
+        setDeleting(false)
+        return
+      }
+
+      toast.success('Post deleted successfully')
+      router.push('/')
+      router.refresh()
     } catch (err) {
-      console.error(err)
-      toast.error('Could not delete post')
-    } finally {
-      setLoading(false)
+      console.error('Delete error:', err)
+      toast.error('Something went wrong')
+      setDeleting(false)
     }
   }
 
   return (
-    <button onClick={handleDelete} className="text-red-600" disabled={loading}>
-      {loading ? 'Deleting…' : 'Delete'}
-    </button>
+    <Button
+      variant="destructive"
+      size={variant === 'small' ? 'sm' : 'default'}
+      disabled={deleting}
+      onClick={handleDelete}
+    >
+      {deleting ? 'Deleting...' : 'Delete Post'}
+    </Button>
   )
 }

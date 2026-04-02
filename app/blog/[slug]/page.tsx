@@ -4,6 +4,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { timeAgo, readingTime } from '@/lib/utils'
 import CommentSection from '@/components/CommentSection'
+import DeletePostButton from '@/components/DeletePostButton'
+import LikeButton from '@/components/LikeButton'
+import ReadingProgress from '@/components/ReadingProgress'
+import CopyLinkButton from '@/components/CopyLinkButton'
 import { sanitizeHtml, escapeHtml } from '@/lib/sanitize'
 import { canEditPost } from '@/lib/rbac'
 
@@ -58,8 +62,19 @@ export default async function PostPage({ params }: Props) {
 
   const canEdit = canEditPost(userProfile, post.author_id)
 
+  // Fetch likes for this post
+  const { data: likesData } = await supabase
+    .from('likes')
+    .select('user_id')
+    .eq('post_id', post.id)
+
+  const likeCount = likesData?.length ?? 0
+  const currentUserId = user?.id
+  const userLiked = currentUserId ? (likesData as { user_id: string }[])?.some(l => l.user_id === currentUserId) ?? false : false
+
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
+      <ReadingProgress />
       <article className="bg-white rounded-lg shadow-sm overflow-hidden">
         {post.image_url && (
           <div className="relative h-72 w-full">
@@ -78,16 +93,21 @@ export default async function PostPage({ params }: Props) {
                 <span> · </span>
                 <span>{readingTime(post.body)}</span>
               </div>
+              <div className="mt-3">
+                <LikeButton postId={post.id} initialCount={likeCount} initialLiked={userLiked} />
+              </div>
             </div>
 
             {canEdit && (
-              <div>
+              <div className="flex items-center gap-2">
                 <Link
                   href={`/blog/${post.slug}/edit`}
-                  className="inline-flex items-center px-3 py-2 border border-gray-200 rounded-md text-sm hover:bg-gray-50"
+                  className="text-sm px-4 py-1.5 border rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Edit
                 </Link>
+                <DeletePostButton postId={post.id} variant="small" />
+                <CopyLinkButton />
               </div>
             )}
           </div>

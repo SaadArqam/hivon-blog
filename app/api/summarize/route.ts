@@ -13,6 +13,10 @@ export async function POST(request: NextRequest) {
     }
 
     const summary = await generateSummary(content)
+    if (!summary) {
+      console.error('Summarize route: Gemini returned no summary')
+      return NextResponse.json({ error: 'Failed to generate summary' }, { status: 502 })
+    }
     return NextResponse.json({ summary })
 
   } catch (error) {
