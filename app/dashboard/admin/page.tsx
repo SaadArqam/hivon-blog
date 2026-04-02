@@ -4,14 +4,15 @@ import Link from 'next/link'
 import React from 'react'
 import DeletePostButton from '@/components/DeletePostButton'
 import HideCommentButton from '@/components/HideCommentButton'
+import { canViewAdminDashboard, getRoleBadgeClasses, getRoleDisplayName } from '@/lib/rbac'
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return redirect('/')
 
-  const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()
-  if (!profile || profile.role !== 'admin') return redirect('/')
+  const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle()
+  if (!canViewAdminDashboard(profile)) return redirect('/')
 
   const { data: posts } = await supabase
     .from('posts')
@@ -33,15 +34,15 @@ export default async function AdminDashboard() {
   const postsMap = new Map<string, any>()
   posts?.forEach(p => postsMap.set(p.id, p))
 
-  const truncateText = (text: string, maxLength: number) => 
-    text.length > maxLength ? text.substring(0, maxLength) + '...' : text
-
   const getStatusBadge = (status: string) => {
     const baseClasses = "px-2 py-1 text-xs rounded-full"
     return status === 'published' 
       ? `${baseClasses} bg-green-100 text-green-800`
       : `${baseClasses} bg-yellow-100 text-yellow-800`
   }
+
+  const truncateText = (text: string, maxLength: number) => 
+    text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
@@ -151,19 +152,13 @@ export default async function AdminDashboard() {
             </thead>
             <tbody>
               {users?.map(u => {
-                const roleBadgeClasses = u.role === 'admin' 
-                  ? "px-2 py-1 text-xs rounded-full bg-red-100 text-red-800"
-                  : u.role === 'author'
-                  ? "px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800"
-                  : "px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800"
-                
                 return (
                   <tr key={u.id} className="border-t">
                     <td className="p-2">{u.name}</td>
                     <td className="p-2">{u.email}</td>
                     <td className="p-2">
-                      <span className={roleBadgeClasses}>
-                        {u.role}
+                      <span className={getRoleBadgeClasses(u.role)}>
+                        {getRoleDisplayName(u.role)}
                       </span>
                     </td>
                     <td className="p-2">{new Date(u.created_at).toLocaleDateString()}</td>

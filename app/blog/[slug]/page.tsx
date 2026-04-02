@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { timeAgo, readingTime } from '@/lib/utils'
 import CommentSection from '@/components/CommentSection'
 import { sanitizeHtml, escapeHtml } from '@/lib/sanitize'
+import { canEditPost } from '@/lib/rbac'
 
 interface Props {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 function bodyToHtml(text: string) {
@@ -21,10 +22,7 @@ function bodyToHtml(text: string) {
 
 export default async function PostPage({ params }: Props) {
   const supabase = await createClient()
-
-  // params can be a Promise in some Next.js runtimes — unwrap it first.
-  const realParams = await (params as unknown as Promise<{ slug: string }>)
-  const slug = realParams.slug
+  const { slug } = await params
 
   // Fetch post by slug
   const { data: post, error } = await supabase
@@ -46,17 +44,19 @@ export default async function PostPage({ params }: Props) {
 
   // Get current user to decide edit permissions
   const { data: { user } } = await supabase.auth.getUser()
-  let canEdit = false
+  
+  // Fetch user profile for role checking
+  let userProfile = null
   if (user) {
     const { data: profile } = await supabase
       .from('users')
-      .select('role')
+      .select('id, name, email, role, created_at')
       .eq('id', user.id)
       .maybeSingle()
-    const role = profile?.role
-    if (role === 'admin') canEdit = true
-    if (post.author_id === user.id) canEdit = true
+    userProfile = profile
   }
+
+  const canEdit = canEditPost(userProfile, post.author_id)
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">

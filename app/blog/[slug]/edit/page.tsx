@@ -1,27 +1,38 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
-import React from 'react'
 import type { Post } from '@/types'
 import EditPostForm from '@/components/EditPostForm'
 
 interface Props {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export default async function EditPostPage({ params }: Props) {
   const supabase = await createClient()
+  const { slug } = await params
 
   const { data: post, error } = await supabase
     .from('posts')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .single()
 
-  if (error || !post) return notFound()
+  if (error) {
+    console.error('Database error:', error)
+    return notFound()
+  }
+
+  if (!post) {
+    console.log('No post found with slug:', slug)
+    return notFound()
+  }
 
   // Check auth and permissions
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return redirect('/(auth)/login')
+  
+  if (!user) {
+    return redirect('/(auth)/login')
+  }
 
   const { data: profile } = await supabase
     .from('users')
@@ -31,6 +42,7 @@ export default async function EditPostPage({ params }: Props) {
 
   const role = profile?.role
   const isOwner = post.author_id === user.id
+  
   if (!(isOwner || role === 'admin')) {
     return redirect('/')
   }

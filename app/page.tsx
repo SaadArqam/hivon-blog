@@ -5,7 +5,7 @@ import Skeleton from '@/components/ui/skeleton'
 import { Post } from '@/types'
 
 interface HomePageProps {
-  searchParams: Promise<{ search?: string; page?: string }>
+  searchParams: Promise<{ search?: string; page?: string; tag?: string }>
 }
 
 const POSTS_PER_PAGE = 6
@@ -15,6 +15,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams
   const search = params.search ?? ''
   const page = parseInt(params.page ?? '1')
+  const tag = params.tag ?? ''
   const from = (page - 1) * POSTS_PER_PAGE
   const to = from + POSTS_PER_PAGE - 1
 
@@ -127,16 +128,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 ))}
               </div>
             )}
-          </div>
-        ) : (
-          <div className="text-center py-20 text-gray-400">
-            <p className="text-5xl mb-4">📭</p>
-            <p className="text-lg font-medium">
-              {search ? `No posts found for "${search}"` : 'No posts yet'}
-            </p>
-            <p className="text-sm mt-1">
-              {search ? 'Try a different search term' : 'Be the first to write something!'}
-            </p>
           </div>
         )}
       </main>

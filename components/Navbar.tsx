@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import useUser from '@/hooks/useUser'
 import { toast } from 'sonner'
+import { canCreatePost, canViewAdminDashboard, getRoleBadgeClasses } from '@/lib/rbac'
 
 export default function Navbar() {
   const router = useRouter()
@@ -36,7 +37,7 @@ export default function Navbar() {
             Home
           </Link>
 
-          {user?.role === 'admin' && (
+          {canViewAdminDashboard(user) && (
             <Link href="/dashboard/admin" className="text-sm text-gray-600 hover:text-gray-900">
               Admin
             </Link>
@@ -47,13 +48,7 @@ export default function Navbar() {
               {user ? (
                 <div className="flex items-center gap-3">
                   {/* Role Badge */}
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    user.role === 'admin'
-                      ? 'bg-red-100 text-red-700'
-                      : user.role === 'author'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
+                  <span className={getRoleBadgeClasses(user.role)}>
                     {user.role}
                   </span>
 
@@ -61,7 +56,7 @@ export default function Navbar() {
                     Hi, {user.name.split(' ')[0]}
                   </span>
 
-                  {['author', 'admin'].includes(user.role) && (
+                  {canCreatePost(user) && (
                     <Link href="/blog/new">
                       <Button size="sm">+ New Post</Button>
                     </Link>
@@ -105,13 +100,13 @@ export default function Navbar() {
             Home
           </Link>
 
-          {user?.role === 'admin' && (
+          {canViewAdminDashboard(user) && (
             <Link href="/dashboard/admin" className="block text-sm text-gray-600" onClick={() => setMenuOpen(false)}>
               Admin Dashboard
             </Link>
           )}
 
-          {['author', 'admin'].includes(user?.role ?? '') && (
+          {canCreatePost(user) && (
             <Link href="/blog/new" className="block text-sm text-gray-600" onClick={() => setMenuOpen(false)}>
               + New Post
             </Link>
