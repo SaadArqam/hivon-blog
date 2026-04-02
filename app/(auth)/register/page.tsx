@@ -6,18 +6,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { toast } from 'sonner'
 import { checkEmailRateLimit, recordEmailAttempt, formatRetryAfter } from '@/lib/rateLimiter'
 import { bypassSupabaseAuth, isDevelopmentBypass } from '@/lib/devAuth'
-// Skeleton component not used currently
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -26,7 +17,6 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<'viewer' | 'author'>('viewer')
-  // derive rate limit info from email deterministically to avoid setState-in-effect
   const rateLimitInfo = email ? checkEmailRateLimit(email) : null
 
   async function handleRegister() {
@@ -39,19 +29,14 @@ export default function RegisterPage() {
       return
     }
 
-    // Check rate limit
     const rateCheck = checkEmailRateLimit(email)
-    console.log('Rate check:', rateCheck, 'Is dev bypass:', isDevelopmentBypass())
     
     if (!rateCheck.allowed) {
-      // In development, offer bypass option
       if (isDevelopmentBypass()) {
-        console.log('Using development bypass...')
         setLoading(true)
         const bypassResult = await bypassSupabaseAuth(email, password, name, role)
         if (bypassResult) {
-          // Skip Supabase call and profile creation for bypass
-          toast.success('Development bypass: Account created successfully!')
+          toast.success('Account created successfully!')
           router.push('/')
           router.refresh()
           return
@@ -62,21 +47,13 @@ export default function RegisterPage() {
       }
       
       toast.error(`Rate limit exceeded. Please try again in ${formatRetryAfter(rateCheck.retryAfter!)}`)
-      setLoading(false)
       return
     }
 
-    console.log('Proceeding with normal Supabase auth...')
     setLoading(true)
-    
-    // Check if we should use mock client for development
     const supabase = createClient()
-    console.log('Supabase client created:', supabase)
-    
-    // Record attempt AFTER checking bypass
     recordEmailAttempt(email)
 
-    // Step 1: Sign up
     const signUpResult = await supabase.auth.signUp({ email, password })
     if (signUpResult.error) {
       toast.error(signUpResult.error.message)
@@ -91,22 +68,18 @@ export default function RegisterPage() {
       return
     }
 
-    // Step 2: Create profile server-side via admin API to avoid RLS issues
     try {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: createdUser.id, name, email, role }),
+        body: JSON.stringify({ id: createdUser.id, name, email, role }),
       })
       if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
-        console.error('Profile service error:', json)
         toast.error('Account created but profile setup failed')
         setLoading(false)
         return
       }
     } catch (err) {
-      console.error('Profile service exception:', err)
       toast.error('Account created but profile setup failed')
       setLoading(false)
       return
@@ -118,116 +91,96 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            Create an account
-          </CardTitle>
-          <CardDescription className="text-center">
-            Join Hivon Blog as a reader or writer
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen flex items-center justify-center bg-white px-6 py-12">
+      <div className="w-full max-w-sm space-y-12">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">Join Hivon.</h1>
+          <p className="text-gray-500 text-sm">
+            Become a part of the next generation of professional publishing.
+          </p>
+        </div>
 
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Full Name
-            </label>
-            <Input
-              placeholder="John Doe"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              disabled={loading}
-              className="text-lg"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <Input
-              type="email"
-              placeholder="john@example.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              disabled={loading}
-              className={rateLimitInfo && !rateLimitInfo.allowed ? 'border-red-500' : ''}
-            />
-            {rateLimitInfo && !rateLimitInfo.allowed && (
-              <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-                <p className="font-medium">⚠️ Rate limit exceeded</p>
-                <p>Please try again in {formatRetryAfter(rateLimitInfo.retryAfter!)}</p>
-                {isDevelopmentBypass() && (
-              <p className="mt-1 text-blue-600">💡 Development mode: Click &quot;Create Account&quot; again to use bypass</p>
-                )}
-              </div>
-            )}
-            {rateLimitInfo && rateLimitInfo.allowed && rateLimitInfo.remainingAttempts !== undefined && (
-              <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                <p>{rateLimitInfo.remainingAttempts} attempts remaining before rate limit</p>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Password</label>
-            <Input
-              type="password"
-              placeholder="Min. 6 characters"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          {/* Role Selector */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">I want to join as a...</label>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={() => setRole('viewer')}
+        <div className="space-y-8">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">Full Name</label>
+              <Input
+                placeholder="Name"
+                value={name}
+                onChange={e => setName(e.target.value)}
                 disabled={loading}
-                variant={role === 'viewer' ? 'default' : 'outline'}
-                className="p-3 text-sm font-medium"
-              >
-                👀 Reader
-              </Button>
-              <Button
-                onClick={() => setRole('author')}
-                disabled={loading}
-                variant={role === 'author' ? 'default' : 'outline'}
-                className="p-3 text-sm font-medium"
-              >
-                ✍️ Author
-              </Button>
+                className="h-12 border-gray-100 bg-gray-50/50 rounded-xl focus:bg-white transition-all"
+              />
             </div>
-            <p className="text-xs text-gray-400 text-center">
-              Selected: <span className="font-medium capitalize">{role}</span>
-            </p>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">Email Address</label>
+              <Input
+                type="email"
+                placeholder="email@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                disabled={loading}
+                className={`h-12 border-gray-100 bg-gray-50/50 rounded-xl focus:bg-white transition-all ${rateLimitInfo && !rateLimitInfo.allowed ? 'border-red-200' : ''}`}
+              />
+              {rateLimitInfo && !rateLimitInfo.allowed && (
+                 <div className="text-[10px] font-bold uppercase tracking-widest text-red-500 text-center pt-1">
+                   Wait {formatRetryAfter(rateLimitInfo.retryAfter!)}
+                 </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">Password</label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                disabled={loading}
+                className="h-12 border-gray-100 bg-gray-50/50 rounded-xl focus:bg-white transition-all"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">I want to be a...</label>
+              <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100">
+                <button
+                   onClick={() => setRole('viewer')}
+                   disabled={loading}
+                   className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest rounded-lg transition-all ${role === 'viewer' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Reader
+                </button>
+                <button
+                   onClick={() => setRole('author')}
+                   disabled={loading}
+                   className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest rounded-lg transition-all ${role === 'author' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Author
+                </button>
+              </div>
+            </div>
           </div>
 
           <Button
-            className="w-full"
+            className="w-full h-12 bg-gray-900 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-black transition-all"
             onClick={handleRegister}
             disabled={loading || (rateLimitInfo?.allowed === false)}
           >
-            {loading ? 'Creating account...' : 
-             rateLimitInfo?.allowed === false ? 'Rate Limited (Dev Bypass Available)' : 
-             'Create Account'}
+            {loading ? '...' : 'Create Account'}
           </Button>
-        </CardContent>
 
-        <CardFooter className="justify-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link href="/login" className="text-blue-600 hover:underline font-medium">
-              Sign in
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
+          <footer className="text-center">
+              <p className="text-xs text-gray-500">
+                Already have an account?{' '}
+                <Link href="/login" className="text-gray-900 font-bold hover:underline">
+                  Sign in
+                </Link>
+              </p>
+          </footer>
+        </div>
+      </div>
     </div>
   )
 }

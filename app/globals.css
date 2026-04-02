@@ -119,12 +119,32 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 transition-colors duration-200;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   html {
-    @apply font-sans;
+    @apply font-sans scroll-smooth;
   }
+  ::selection {
+    @apply bg-gray-900 text-white;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.922 0 0);
+  border: 3px solid white;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.87 0 0);
 }

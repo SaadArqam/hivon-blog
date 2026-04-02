@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { timeAgo } from '@/lib/utils'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 
 type CommentBase = {
   id: string
@@ -37,7 +38,6 @@ export default function CommentSection({ postId }: Props) {
 
   useEffect(() => {
     fetchComments()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId])
 
   useEffect(() => {
@@ -57,7 +57,6 @@ export default function CommentSection({ postId }: Props) {
       setIsAdmin(profile?.role === 'admin')
     })()
     return () => { mounted = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchComments() {
@@ -68,7 +67,6 @@ export default function CommentSection({ postId }: Props) {
       const json = await res.json()
       const fetched = json.comments ?? []
       setComments(fetched)
-      // default: collapse replies
       const map: Record<string, boolean> = {}
       fetched.forEach((c: CommentWithReplies) => { if (c.id) map[c.id] = true })
       setCollapsedMap(map)
@@ -97,7 +95,6 @@ export default function CommentSection({ postId }: Props) {
       user: { name: userName ?? 'You' },
     }
 
-    // Optimistic UI: if posting a reply, attach under parent; else prepend
     if (body.reply_to_id) {
       setComments(prev => prev.map(c => c.id === body.reply_to_id ? ({ ...c, replies: [...(c.replies || []), tempComment] }) : c))
     } else {
@@ -108,24 +105,21 @@ export default function CommentSection({ postId }: Props) {
       const res = await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ post_id: postId, comment_text: body.comment_text, reply_to_id: body.reply_to_id }),
+        body: JSON.stringify({ post_id: postId, comment_text: body.comment_text, reply_to_id: body.reply_to_id }),
       })
       if (!res.ok) throw new Error('Failed to submit')
       const json = await res.json()
 
-      // Replace temp comment(s)
+      const serverComment = json.comment
       if (body.reply_to_id) {
-        const serverReply = json.comment
-        setComments(prev => prev.map(c => c.id === body.reply_to_id ? ({ ...c, replies: [...(c.replies || []).map(r => r.id === tempId ? serverReply : r), serverReply] }) : c))
+        setComments(prev => prev.map(c => c.id === body.reply_to_id ? ({ ...c, replies: (c.replies || []).map(r => r.id === tempId ? serverComment : r) }) : c))
       } else {
-        const serverComment = json.comment
         setComments(prev => prev.map(c => c.id === tempId ? serverComment : c))
       }
       toast.success('Comment posted')
       return json.comment
     } catch (err) {
       console.error(err)
-      // rollback optimistic add
       setComments(prev => prev.filter(c => c.id !== tempId).map(c => ({ ...c, replies: (c.replies || []).filter(r => r.id !== tempId) })))
       toast.error('Failed to post comment')
       return null
@@ -146,10 +140,7 @@ export default function CommentSection({ postId }: Props) {
   }
 
   async function handleHide(commentId: string) {
-    if (!isAdmin) {
-      toast.error('Unauthorized')
-      return
-    }
+    if (!isAdmin) return
     try {
       const res = await fetch('/api/comments', {
         method: 'PATCH',
@@ -157,120 +148,130 @@ export default function CommentSection({ postId }: Props) {
         body: JSON.stringify({ comment_id: commentId }),
       })
       if (!res.ok) throw new Error('Failed to hide')
-      // remove comment from UI
       setComments(prev => prev.filter(c => c.id !== commentId).map(c => ({ ...c, replies: (c.replies || []).filter(r => r.id !== commentId) })))
       toast.success('Comment hidden')
     } catch (err) {
       console.error(err)
       toast.error('Failed to hide comment')
-  }
     }
+  }
 
   return (
-    <div className="bg-white rounded-lg border p-4">
-      <h3 className="text-lg font-semibold mb-3">Comments</h3>
+    <div className="space-y-10">
+      <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+        <h3 className="text-xl font-bold tracking-tight text-gray-900">
+            Discussion ({comments.length + (comments.reduce((acc, c) => acc + (c.replies?.length ?? 0), 0))})
+        </h3>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mb-4">
+      <form onSubmit={handleSubmit} className="relative">
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
-          className="w-full border rounded-md p-2 min-h-[80px]"
-          placeholder={userId ? 'Write a comment...' : 'Log in to leave a comment'}
+          className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 min-h-[120px] text-sm focus:bg-white focus:outline-none focus:ring-1 focus:ring-gray-300 transition-all placeholder:text-gray-400"
+          placeholder={userId ? 'Share your thoughts...' : 'You must be logged in to participate.'}
           disabled={!userId}
         />
-        <div className="flex items-center justify-end mt-2">
-          <button
+        <div className="mt-4 flex justify-end">
+          <Button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
+            size="sm"
+            className="rounded-full bg-gray-900 text-white hover:bg-black px-6 text-xs font-bold uppercase tracking-widest h-10"
             disabled={!userId || !text.trim()}
           >
             Post Comment
-          </button>
+          </Button>
         </div>
       </form>
 
       {loading ? (
-        <p className="text-sm text-gray-500">Loading comments…</p>
-      ) : comments.length === 0 ? (
-        <p className="text-sm text-gray-500">No comments yet.</p>
+        <div className="py-10 text-center">
+            <span className="text-sm font-medium text-gray-400 animate-pulse">Loading discussion...</span>
+        </div>
       ) : (
-        <ul className="space-y-3">
+        <div className="space-y-8">
           {comments.map(c => (
-            <li key={c.id} className="border rounded-md p-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-semibold text-blue-700">{c.user?.name?.charAt(0) ?? '?'}</div>
-                  <div>
-                    <div className="text-sm font-medium">{c.user?.name ?? 'Unknown'}</div>
-                    <div className="text-xs text-gray-500">{timeAgo(c.created_at)}</div>
-                  </div>
+            <div key={c.id} className="group">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200">
+                    <span className="text-xs font-bold text-gray-400 uppercase">{c.user?.name?.charAt(0) ?? '?'}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {isAdmin && (
-                    <button onClick={() => handleHide(c.id)} className="text-xs text-red-600 hover:underline">Hide</button>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-gray-900">{c.user?.name ?? 'Unknown'}</span>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{timeAgo(c.created_at)}</span>
+                    </div>
+                    {isAdmin && (
+                        <button onClick={() => handleHide(c.id)} className="text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:text-red-500 transition-colors">
+                            Remove
+                        </button>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{c.comment_text}</p>
+                  
+                  <div className="flex items-center gap-4 pt-1">
+                    <button
+                        onClick={() => setOpenReplyFor(openReplyFor === c.id ? null : c.id)}
+                        className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors"
+                    >
+                        Reply
+                    </button>
+                    {c.replies && c.replies.length > 0 && (
+                        <button
+                            onClick={() => setCollapsedMap(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
+                            className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors"
+                        >
+                            {collapsedMap[c.id] ? `Show ${c.replies.length} replies` : `Hide replies`}
+                        </button>
+                    )}
+                  </div>
+
+                  {openReplyFor === c.id && (
+                    <div className="mt-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <ReplyBox
+                        onCancel={() => setOpenReplyFor(null)}
+                        onSubmit={async (val) => await handleReplySubmit(c.id, val)}
+                      />
+                    </div>
+                  )}
+
+                  {!collapsedMap[c.id] && c.replies && c.replies.length > 0 && (
+                    <div className="mt-6 space-y-6 pt-6 border-l border-gray-100 pl-6 ml-1">
+                      {c.replies.map(r => (
+                        <div key={r.id} className="flex items-start gap-4">
+                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase">{r.user?.name?.charAt(0) ?? '?'}</span>
+                            </div>
+                            <div className="flex-1 space-y-1">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-bold text-gray-900">{r.user?.name ?? 'Unknown'}</span>
+                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{timeAgo(r.created_at)}</span>
+                                    </div>
+                                    {isAdmin && (
+                                        <button onClick={() => handleHide(r.id)} className="text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:text-red-500 transition-colors">
+                                            Remove
+                                        </button>
+                                    )}
+                                </div>
+                                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{r.comment_text}</p>
+                            </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
-
-              <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{c.comment_text}</p>
-
-              <div className="mt-2 flex items-center gap-3">
-                {/* Reply toggle and button */}
-                {c.replies && c.replies.length > 0 && (
-                  <button
-                    className="text-sm text-blue-600"
-                    onClick={() => setCollapsedMap(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
-                  >
-                    {c.replies.length} repl{c.replies.length === 1 ? 'y' : 'ies'}
-                  </button>
-                )}
-
-                {/* Reply button only on top-level comments */}
-                <button
-                  onClick={() => setOpenReplyFor(openReplyFor === c.id ? null : c.id)}
-                  className="text-sm text-gray-600"
-                >
-                  Reply
-                </button>
-              </div>
-
-              {/* Reply input */}
-              {openReplyFor === c.id && (
-                <div className="mt-3">
-                  <ReplyBox
-                    onCancel={() => setOpenReplyFor(null)}
-                    onSubmit={async (val) => await handleReplySubmit(c.id, val)}
-                  />
-                </div>
-              )}
-
-              {/* Replies (indented) */}
-              {c.replies && c.replies.length > 0 && (
-                <div className="mt-3 border-l-2 border-blue-200 pl-4 ml-8 space-y-2">
-                  {!collapsedMap[c.id] && (c as CommentWithReplies).replies?.map(r => (
-                    <div key={r.id} className="bg-white">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-sm font-semibold text-blue-700">{r.user?.name?.charAt(0) ?? '?'}</div>
-                          <div>
-                            <div className="text-sm font-medium">{r.user?.name ?? 'Unknown'}</div>
-                            <div className="text-xs text-gray-500">{timeAgo(r.created_at)}</div>
-                          </div>
-                        </div>
-                        <div>
-                          {isAdmin && (
-                            <button onClick={() => handleHide(r.id)} className="text-xs text-red-600 hover:underline">Hide</button>
-                          )}
-                        </div>
-                      </div>
-                      <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{r.comment_text}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </li>
+            </div>
           ))}
-        </ul>
+
+          {comments.length === 0 && (
+            <div className="py-20 text-center border border-dashed border-gray-100 rounded-2xl">
+                <p className="text-sm font-medium text-gray-400">No discussion started yet.</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
@@ -289,11 +290,29 @@ function ReplyBox({ onCancel, onSubmit }: { onCancel: () => void; onSubmit: (val
   }
 
   return (
-    <div className="space-y-2">
-      <textarea value={val} onChange={e => setVal(e.target.value)} className="w-full border rounded-md p-2 min-h-[60px]"></textarea>
+    <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+      <textarea 
+        autoFocus
+        value={val} 
+        onChange={e => setVal(e.target.value)} 
+        className="w-full bg-white border border-gray-200 rounded-lg p-3 min-h-[80px] text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 transition-all placeholder:text-gray-400"
+        placeholder="Write a reply..."
+      />
       <div className="flex gap-2 justify-end">
-        <button onClick={onCancel} className="px-3 py-1 border rounded">Cancel</button>
-        <button onClick={handlePost} className="px-3 py-1 bg-blue-600 text-white rounded" disabled={submitting}>{submitting ? 'Posting...' : 'Post Reply'}</button>
+        <button 
+            onClick={onCancel} 
+            className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-gray-900 transition-colors"
+        >
+            Cancel
+        </button>
+        <Button 
+            onClick={handlePost} 
+            size="sm"
+            className="rounded-full bg-gray-900 text-white hover:bg-black px-4 text-[10px] font-bold uppercase tracking-widest h-8"
+            disabled={submitting || !val.trim()}
+        >
+            {submitting ? '...' : 'Reply'}
+        </Button>
       </div>
     </div>
   )

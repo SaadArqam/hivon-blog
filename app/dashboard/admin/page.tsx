@@ -5,7 +5,7 @@ import React from 'react'
 import { Post, User, Comment } from '@/types'
 import DeletePostButton from '@/components/DeletePostButton'
 import HideCommentButton from '@/components/HideCommentButton'
-import { canViewAdminDashboard, getRoleBadgeClasses, getRoleDisplayName } from '@/lib/rbac'
+import { canViewAdminDashboard } from '@/lib/rbac'
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
@@ -40,63 +40,68 @@ export default async function AdminDashboard() {
   postsTyped.forEach(p => postsMap.set(p.id, p))
 
   const getStatusBadge = (status: string) => {
-    const baseClasses = "px-2 py-1 text-xs rounded-full"
+    const baseClasses = "text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border"
     return status === 'published' 
-      ? `${baseClasses} bg-green-100 text-green-800`
-      : `${baseClasses} bg-yellow-100 text-yellow-800`
+      ? `${baseClasses} border-gray-100 bg-gray-50 text-gray-500`
+      : `${baseClasses} border-yellow-100 bg-yellow-50 text-yellow-600`
   }
 
   const truncateText = (text: string, maxLength: number) => 
     text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+    <div className="max-w-5xl mx-auto py-16 px-6 space-y-16">
+      <header className="space-y-4">
+        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">Admin.</h1>
+        <p className="text-gray-500 text-lg">System-wide overview and management.</p>
+      </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white border rounded p-4">
-          <div className="text-sm text-gray-500">Posts</div>
-          <div className="text-2xl font-semibold">{postsCount}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <div className="bg-white border border-gray-100 rounded-2xl p-8 space-y-2">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Stories</div>
+          <div className="text-4xl font-bold tracking-tight text-gray-900">{postsCount}</div>
         </div>
-        <div className="bg-white border rounded p-4">
-          <div className="text-sm text-gray-500">Comments</div>
-          <div className="text-2xl font-semibold">{commentsCount}</div>
+        <div className="bg-white border border-gray-100 rounded-2xl p-8 space-y-2">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Discussion Items</div>
+          <div className="text-4xl font-bold tracking-tight text-gray-900">{commentsCount}</div>
         </div>
-        <div className="bg-white border rounded p-4">
-          <div className="text-sm text-gray-500">Users</div>
-          <div className="text-2xl font-semibold">{usersCount}</div>
+        <div className="bg-white border border-gray-100 rounded-2xl p-8 space-y-2">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Active Users</div>
+          <div className="text-4xl font-bold tracking-tight text-gray-900">{usersCount}</div>
         </div>
       </div>
 
-      <section className="mb-6">
-        <h2 className="text-lg font-medium mb-3">All Posts ({postsCount})</h2>
-        <div className="bg-white border rounded">
+      <section className="space-y-6">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <h2 className="text-xl font-bold tracking-tight text-gray-900">Global Stories</h2>
+        </div>
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-2 text-left">Title</th>
-                <th className="p-2 text-left">Author Name</th>
-                <th className="p-2">Status Badge</th>
-                <th className="p-2">Created Date</th>
-                <th className="p-2">Edit Button</th>
+            <thead>
+              <tr className="text-left">
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Title</th>
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Author</th>
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2 text-center">Status</th>
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Created</th>
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-50">
               {posts?.map(p => (
-                <tr key={p.id} className="border-t">
-                  <td className="p-2">{p.title}</td>
-                  <td className="p-2">{usersMap.get(p.author_id)?.name ?? 'Unknown'}</td>
-                  <td className="p-2 text-center">
+                <tr key={p.id} className="group hover:bg-gray-50/50 transition-colors">
+                  <td className="py-4 px-2 font-medium text-gray-900">{p.title}</td>
+                  <td className="py-4 px-2 text-gray-500">{usersMap.get(p.author_id)?.name ?? 'Unknown'}</td>
+                  <td className="py-4 px-2 text-center">
                     <span className={getStatusBadge(p.status)}>
                       {p.status}
                     </span>
                   </td>
-                  <td className="p-2">{new Date(p.created_at).toLocaleDateString()}</td>
-                  <td className="p-2">
-                    <div className="flex items-center gap-2">
+                  <td className="py-4 px-2 text-gray-400 text-xs">{new Date(p.created_at).toLocaleDateString()}</td>
+                  <td className="py-4 px-2 text-right">
+                    <div className="flex items-center justify-end gap-4">
                       <Link 
                         href={`/blog/${p.slug}/edit`} 
-                        className="text-blue-600 hover:text-blue-800 underline"
+                        className="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors"
                       >
                         Edit
                       </Link>
@@ -110,71 +115,29 @@ export default async function AdminDashboard() {
         </div>
       </section>
 
-      <section className="mb-6">
-        <h2 className="text-lg font-medium mb-3">All Comments ({commentsCount})</h2>
-        <div className="bg-white border rounded">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-2 text-left">Comment Text (truncated to 60 chars)</th>
-                <th className="p-2">Author Name</th>
-                <th className="p-2">Post Title</th>
-                <th className="p-2">Date</th>
-                <th className="p-2">Hide Button</th>
-              </tr>
-            </thead>
-            <tbody>
-              {comments?.map(c => {
-                const post = postsMap.get(c.post_id)
-                return (
-                  <tr key={c.id} className="border-t">
-                    <td className="p-2">{truncateText(c.comment_text, 60)}</td>
-                    <td className="p-2">{usersMap.get(c.user_id)?.name ?? 'Unknown'}</td>
-                    <td className="p-2">{post?.title ?? 'Unknown Post'}</td>
-                    <td className="p-2">{new Date(c.created_at).toLocaleDateString()}</td>
-                    <td className="p-2">
-                      <HideCommentButton commentId={c.id} />
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+      <section className="space-y-6">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <h2 className="text-xl font-bold tracking-tight text-gray-900">User Growth</h2>
         </div>
-      </section>
-
-      <section>
-        <h2 className="text-lg font-medium mb-3">All Users ({usersCount})</h2>
-        <div className="bg-white border rounded">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-2 text-left">Name</th>
-                <th className="p-2">Email</th>
-                <th className="p-2">Role Badge</th>
-                <th className="p-2">Joined Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users?.map(u => {
-                return (
-                  <tr key={u.id} className="border-t">
-                    <td className="p-2">{u.name}</td>
-                    <td className="p-2">{u.email}</td>
-                    <td className="p-2">
-                      <span className={getRoleBadgeClasses(u.role)}>
-                        {getRoleDisplayName(u.role)}
-                      </span>
-                    </td>
-                    <td className="p-2">{new Date(u.created_at).toLocaleDateString()}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {usersTyped.slice(0, 8).map(u => (
+                <div key={u.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-gray-300 transition-colors">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400">{u.name.charAt(0)}</span>
+                        </div>
+                        <div>
+                            <div className="text-sm font-bold text-gray-900">{u.name}</div>
+                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{u.email}</div>
+                        </div>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border border-gray-100 bg-gray-50 text-gray-400">
+                        {u.role}
+                    </span>
+                </div>
+            ))}
         </div>
       </section>
     </div>
   )
 }
-

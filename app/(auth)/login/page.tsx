@@ -6,16 +6,13 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { checkLoginRateLimit, recordLoginAttempt, formatRetryAfter } from '@/lib/rateLimiter'
-// Skeleton intentionally not used here
 
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
-  // derive rate limit info from email deterministically to avoid setState-in-effect
   const rateLimitInfo = form.email ? checkLoginRateLimit(form.email) : null
 
   async function handleLogin() {
@@ -24,7 +21,6 @@ export default function LoginPage() {
       return
     }
 
-    // Check rate limit
     const rateCheck = checkLoginRateLimit(form.email)
     if (!rateCheck.allowed) {
       toast.error(`Too many login attempts. Please try again in ${formatRetryAfter(rateCheck.retryAfter!)}`)
@@ -51,78 +47,72 @@ export default function LoginPage() {
     router.refresh()
   }
 
-  // Allow pressing Enter to submit
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') handleLogin()
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
-          <CardDescription className="text-center">
-            Sign in to your Hivon Blog account
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen flex items-center justify-center bg-white px-6 py-12">
+      <div className="w-full max-w-sm space-y-12">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">Sign in.</h1>
+          <p className="text-gray-500 text-sm">
+            Welcome back to the Hivon publishing platform.
+          </p>
+        </div>
 
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
-            <Input
-              type="email"
-              placeholder="john@example.com"
-              value={form.email}
-              onChange={e => setForm({ ...form, email: e.target.value })}
-              onKeyDown={handleKeyDown}
-              disabled={loading}
-              className={rateLimitInfo && !rateLimitInfo.allowed ? 'border-red-500' : ''}
-            />
-            {rateLimitInfo && !rateLimitInfo.allowed && (
-              <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-                <p className="font-medium">⚠️ Too many login attempts</p>
-                <p>Please try again in {formatRetryAfter(rateLimitInfo.retryAfter!)}</p>
-              </div>
-            )}
-            {rateLimitInfo && rateLimitInfo.allowed && rateLimitInfo.remainingAttempts !== undefined && (
-              <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                <p>{rateLimitInfo.remainingAttempts} attempts remaining</p>
-              </div>
-            )}
-          </div>
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">Email Address</label>
+              <Input
+                type="email"
+                placeholder="email@example.com"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                onKeyDown={handleKeyDown}
+                disabled={loading}
+                className={`h-12 border-gray-100 bg-gray-50/50 rounded-xl focus:bg-white transition-all ${rateLimitInfo && !rateLimitInfo.allowed ? 'border-red-200' : ''}`}
+              />
+              {rateLimitInfo && !rateLimitInfo.allowed && (
+                <div className="text-[10px] font-bold uppercase tracking-widest text-red-500 text-center pt-1">
+                  Wait {formatRetryAfter(rateLimitInfo.retryAfter!)}
+                </div>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Password</label>
-            <Input
-              type="password"
-              placeholder="Your password"
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
-              onKeyDown={handleKeyDown}
-              disabled={loading}
-            />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">Password</label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
+                onKeyDown={handleKeyDown}
+                disabled={loading}
+                className="h-12 border-gray-100 bg-gray-50/50 rounded-xl focus:bg-white transition-all"
+              />
+            </div>
           </div>
 
           <Button
-            className="w-full"
+            className="w-full h-12 bg-gray-900 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-black transition-all"
             onClick={handleLogin}
             disabled={loading || (rateLimitInfo?.allowed === false)}
           >
-            {loading ? 'Signing in...' : 
-             rateLimitInfo?.allowed === false ? 'Rate Limited' : 
-             'Sign In'}
+            {loading ? '...' : 'Sign In'}
           </Button>
-        </CardContent>
 
-        <CardFooter className="justify-center">
-            <p className="text-sm text-gray-600">
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="text-blue-600 hover:underline font-medium">
-              Sign up
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
+          <footer className="text-center pt-6">
+              <p className="text-xs text-gray-500">
+                Don&apos;t have an account?{' '}
+                <Link href="/register" className="text-gray-900 font-bold hover:underline">
+                  Sign up free
+                </Link>
+              </p>
+          </footer>
+        </div>
+      </div>
     </div>
   )
 }

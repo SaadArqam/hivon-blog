@@ -1,10 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PostCard from '@/components/PostCard'
 import { Post } from '@/types'
-import Skeleton from '@/components/ui/skeleton'
 
 interface PostsListProps {
   posts: (Post & { author?: { name: string } })[]
@@ -22,14 +20,13 @@ export default function PostsList({
   const router = useRouter()
 
   function handlePostDeleted() {
-    // Refresh the page to show updated posts list
     router.refresh()
   }
 
   return (
     <>
       {/* Posts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
         {posts.map((post) => (
           <PostCard 
             key={post.id} 
@@ -39,54 +36,43 @@ export default function PostsList({
         ))}
       </div>
 
-      {/* Empty State */}
-      {posts.length === 0 && (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
-          <p className="text-gray-500">
-            {search 
-              ? `No posts found for "${search}". Try a different search term.` 
-              : 'No posts published yet. Be the first to share your thoughts!'}
-          </p>
-        </div>
-      )}
-
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-8">
+        <div className="flex justify-center items-center gap-3 mt-20 pt-10 border-t border-gray-100">
           {currentPage > 1 && (
             <a
               href={search ? `/?search=${search}&page=${currentPage - 1}` : `/?page=${currentPage - 1}`}
-              className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-100 transition-colors"
+              className="px-4 py-2 border border-gray-200 rounded-full text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black hover:border-gray-900 transition-all"
             >
-              Previous
+              ← Previous
             </a>
           )}
           
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
-            const base = 'px-4 py-2 rounded-lg text-sm font-medium transition-colors '
-            const isActive = p === currentPage
-            const className = isActive 
-              ? base + 'bg-blue-600 text-white'
-              : base + 'border hover:bg-gray-100'
-            
-            return (
-              <a
-                key={p}
-                href={search ? `/?search=${search}&page=${p}` : `/?page=${p}`}
-                className={className}
-              >
-                {p}
-              </a>
-            )
-          })}
+          <div className="flex gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                const isActive = p === currentPage
+                return (
+                    <a
+                        key={p}
+                        href={search ? `/?search=${search}&page=${p}` : `/?page=${p}`}
+                        className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold transition-all ${
+                            isActive 
+                                ? 'bg-gray-900 text-white' 
+                                : 'text-gray-400 hover:text-black hover:bg-gray-50'
+                        }`}
+                    >
+                        {p}
+                    </a>
+                )
+            })}
+          </div>
           
           {currentPage < totalPages && (
             <a
               href={search ? `/?search=${search}&page=${currentPage + 1}` : `/?page=${currentPage + 1}`}
-              className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-100 transition-colors"
+              className="px-4 py-2 border border-gray-200 rounded-full text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black hover:border-gray-900 transition-all"
             >
-              Next
+              Next →
             </a>
           )}
         </div>

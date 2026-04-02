@@ -32,40 +32,40 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const { data: posts, count } = await query
   const totalPages = Math.ceil((count ?? 0) / POSTS_PER_PAGE)
 
-  // pagination UI helpers are handled inside PostsList
-
   return (
-    <div className="bg-gray-50">
-      <main className="max-w-6xl mx-auto px-4 py-10">
+    <div className="bg-white min-h-screen">
+      <main className="max-w-5xl mx-auto px-6 py-16">
 
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Hivon Blog
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 mb-6">
+            Explore stories.
           </h1>
-          <p className="text-gray-500 text-lg">
-            Thoughts, ideas, and stories from our community
+          <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
+            Thought-provoking articles, curated by humans and summarized by AI. A minimalist space for professional publishing.
           </p>
         </div>
 
         {/* Search */}
-        <form className="mb-8 flex gap-2 max-w-md mx-auto">
-          <input
-            name="search"
-            defaultValue={search}
-            placeholder="Search posts..."
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          />
+        <form className="mb-16 flex gap-3 max-w-lg mx-auto">
+          <div className="relative flex-1 group">
+            <input
+              name="search"
+              defaultValue={search}
+              placeholder="Search by title..."
+              className="w-full px-5 py-3 rounded-full border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 focus:bg-white transition-all group-hover:border-gray-300"
+            />
+          </div>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+            className="px-8 py-3 bg-gray-900 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors"
           >
             Search
           </button>
           {search && (
             <Link
               href="/"
-              className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-100 transition-colors"
+              className="px-6 py-3 border border-gray-200 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-gray-100 transition-colors flex items-center"
             >
               Clear
             </Link>
@@ -74,21 +74,26 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         {/* Posts Grid */}
         {!posts ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {Array.from({ length: 6 }, (_, i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="h-48 w-full" />
+              <div key={i} className="space-y-6">
+                <Skeleton className="h-52 w-full rounded-lg" />
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
               </div>
             ))}
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-gray-500 text-lg">No posts found</div>
+          <div className="text-center py-20 border border-dashed border-gray-100 rounded-2xl">
+            <div className="text-gray-400 text-lg font-medium">No stories found.</div>
             <div className="text-gray-400 text-sm mt-2">
-              {search ? `No results for "${search}"` : 'No posts published yet'}
+              {search ? `Try a different keyword than "${search}"` : 'Be the first to publish a story.'}
             </div>
+            {search && (
+                <Link href="/" className="inline-block mt-6 text-sm font-semibold text-gray-900 hover:underline">
+                    Back to all stories
+                </Link>
+            )}
           </div>
         ) : (
           <PostsList 
