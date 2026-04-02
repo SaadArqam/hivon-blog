@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkEmailRateLimit, recordEmailAttempt, formatRetryAfter } from '@/lib/rateLimiter'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,6 +13,17 @@ export async function POST(request: NextRequest) {
     if (!id || !name || !email || !role) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
+
+    // Server-side rate limit check
+    const rateCheck = checkEmailRateLimit(email)
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ 
+        error: `Rate limit exceeded. Please try again in ${formatRetryAfter(rateCheck.retryAfter!)}` 
+      }, { status: 429 })
+    }
+
+    // Record the attempt
+    recordEmailAttempt(email)
 
     const { data, error } = await supabaseAdmin
       .from('users')

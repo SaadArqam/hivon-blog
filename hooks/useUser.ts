@@ -22,7 +22,11 @@ export default function useUser() {
 				return
 			}
 
-			const { data: profile } = await supabase.from('users').select('id, name, email, role, created_at').eq('id', authUser.id).maybeSingle()
+			const { data: profile } = await supabase
+				.from('users')
+				.select('id, name, email, role, created_at')
+				.eq('id', authUser.id)
+				.maybeSingle()
 			if (mounted) setUser(profile ?? null)
 			setLoading(false)
 		}
@@ -37,7 +41,6 @@ export default function useUser() {
 			mounted = false
 			listener?.subscription.unsubscribe()
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	return { user, loading }

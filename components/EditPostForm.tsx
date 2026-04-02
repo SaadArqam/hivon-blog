@@ -41,9 +41,10 @@ export default function EditPostForm({ initialPost }: { initialPost: Post }) {
         const json = await res.json()
         throw new Error(json?.error ?? 'Update failed')
       }
+      const { post: updatedPost } = await res.json()
       toast.success('Post updated')
-      // navigate to post
-      window.location.href = `/blog/${initialPost.slug}`
+      // navigate to post with potentially new slug
+      window.location.href = `/blog/${updatedPost.slug}`
     } catch (err: any) {
       console.error(err)
       toast.error(err.message ?? 'Failed to update')

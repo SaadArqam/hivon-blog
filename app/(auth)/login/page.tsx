@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -8,11 +8,23 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { checkLoginRateLimit, recordLoginAttempt, formatRetryAfter } from '@/lib/rateLimiter'
 
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
+  const [rateLimitInfo, setRateLimitInfo] = useState<{ allowed: boolean; retryAfter?: number; remainingAttempts?: number } | null>(null)
+
+  // Check rate limit on email change
+  useEffect(() => {
+    if (form.email) {
+      const check = checkLoginRateLimit(form.email)
+      setRateLimitInfo(check)
+    } else {
+      setRateLimitInfo(null)
+    }
+  }, [form.email])
 
   async function handleLogin() {
     if (!form.email || !form.password) {
@@ -20,7 +32,15 @@ export default function LoginPage() {
       return
     }
 
+    // Check rate limit
+    const rateCheck = checkLoginRateLimit(form.email)
+    if (!rateCheck.allowed) {
+      toast.error(`Too many login attempts. Please try again in ${formatRetryAfter(rateCheck.retryAfter!)}`)
+      return
+    }
+
     setLoading(true)
+    recordLoginAttempt(form.email)
     const supabase = createClient()
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -63,7 +83,19 @@ export default function LoginPage() {
               value={form.email}
               onChange={e => setForm({ ...form, email: e.target.value })}
               onKeyDown={handleKeyDown}
+              className={rateLimitInfo && !rateLimitInfo.allowed ? 'border-red-500' : ''}
             />
+            {rateLimitInfo && !rateLimitInfo.allowed && (
+              <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                <p className="font-medium">⚠️ Too many login attempts</p>
+                <p>Please try again in {formatRetryAfter(rateLimitInfo.retryAfter!)}</p>
+              </div>
+            )}
+            {rateLimitInfo && rateLimitInfo.allowed && rateLimitInfo.remainingAttempts !== undefined && (
+              <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                <p>{rateLimitInfo.remainingAttempts} attempts remaining</p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -80,9 +112,11 @@ export default function LoginPage() {
           <Button
             className="w-full"
             onClick={handleLogin}
-            disabled={loading}
+            disabled={loading || (rateLimitInfo?.allowed === false)}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Signing in...' : 
+             rateLimitInfo?.allowed === false ? 'Rate Limited' : 
+             'Sign In'}
           </Button>
         </CardContent>
 

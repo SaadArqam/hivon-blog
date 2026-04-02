@@ -7,14 +7,14 @@ import type { Post } from '@/types'
 interface Options {
 	search?: string
 	page?: number
-	pageSize?: number
 }
 
-export default function usePosts({ search = '', page = 1, pageSize = 10 }: Options = {}) {
+export default function usePosts({ search = '', page = 1 }: Options = {}) {
 	const [posts, setPosts] = useState<Post[]>([])
 	const [loading, setLoading] = useState<boolean>(true)
 	const [error, setError] = useState<string | null>(null)
 	const supabase = createBrowserClient()
+	const pageSize = 6
 
 	useEffect(() => {
 		let mounted = true
@@ -23,13 +23,22 @@ export default function usePosts({ search = '', page = 1, pageSize = 10 }: Optio
 
 		;(async () => {
 			try {
-				const query = supabase.from('posts').select('*')
+				let query = supabase
+					.from('posts')
+					.select(`
+						*,
+						author:users(id, name, email, role, created_at)
+					`)
+					.eq('status', 'published')
+				
 				if (search && search.trim() !== '') {
-					query.ilike('title', `%${search}%`)
+					query = query.ilike('title', `%${search}%`)
 				}
-				query.order('created_at', { ascending: false }).range((page - 1) * pageSize, page * pageSize - 1)
-
+				
 				const { data, error } = await query
+					.order('created_at', { ascending: false })
+					.range((page - 1) * pageSize, page * pageSize - 1)
+
 				if (error) throw error
 				if (!mounted) return
 				setPosts(data ?? [])
@@ -42,7 +51,6 @@ export default function usePosts({ search = '', page = 1, pageSize = 10 }: Optio
 		})()
 
 		return () => { mounted = false }
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [search, page, pageSize])
 
 	return { posts, loading, error }

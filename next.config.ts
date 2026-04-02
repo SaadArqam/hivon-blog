@@ -2,11 +2,17 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Add your Supabase storage host so next/image can load external
-    // images served from Supabase storage. Replace or extend this list
-    // if you use other hosts.
-    domains: ['lcwukedhkgjtqedxrufj.supabase.co'],
+    // Use remotePatterns instead of deprecated domains
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lcwukedhkgjtqedxrufj.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
+  allowedDevOrigins: ['127.0.0.1'],
   /* config options here */
 };
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { checkEmailRateLimit, recordEmailAttempt, formatRetryAfter } from '@/lib/rateLimiter'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -23,6 +24,17 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<'viewer' | 'author'>('viewer')
+  const [rateLimitInfo, setRateLimitInfo] = useState<{ allowed: boolean; retryAfter?: number; remainingAttempts?: number } | null>(null)
+
+  // Check rate limit on email change
+  useEffect(() => {
+    if (email) {
+      const check = checkEmailRateLimit(email)
+      setRateLimitInfo(check)
+    } else {
+      setRateLimitInfo(null)
+    }
+  }, [email])
 
   async function handleRegister() {
     if (!name || !email || !password) {
@@ -34,7 +46,15 @@ export default function RegisterPage() {
       return
     }
 
+    // Check rate limit
+    const rateCheck = checkEmailRateLimit(email)
+    if (!rateCheck.allowed) {
+      toast.error(`Rate limit exceeded. Please try again in ${formatRetryAfter(rateCheck.retryAfter!)}`)
+      return
+    }
+
     setLoading(true)
+    recordEmailAttempt(email)
     const supabase = createClient()
 
     // Step 1: Sign up
@@ -110,7 +130,19 @@ export default function RegisterPage() {
               placeholder="john@example.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
+              className={rateLimitInfo && !rateLimitInfo.allowed ? 'border-red-500' : ''}
             />
+            {rateLimitInfo && !rateLimitInfo.allowed && (
+              <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                <p className="font-medium">⚠️ Rate limit exceeded</p>
+                <p>Please try again in {formatRetryAfter(rateLimitInfo.retryAfter!)}</p>
+              </div>
+            )}
+            {rateLimitInfo && rateLimitInfo.allowed && rateLimitInfo.remainingAttempts !== undefined && (
+              <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                <p>{rateLimitInfo.remainingAttempts} attempts remaining before rate limit</p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -158,9 +190,11 @@ export default function RegisterPage() {
           <Button
             className="w-full"
             onClick={handleRegister}
-            disabled={loading}
+            disabled={loading || (rateLimitInfo?.allowed === false)}
           >
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? 'Creating account...' : 
+             rateLimitInfo && !rateLimitInfo.allowed ? 'Rate Limited' : 
+             'Create Account'}
           </Button>
         </CardContent>
 

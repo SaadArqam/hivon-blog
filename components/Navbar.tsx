@@ -1,49 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { User } from '@/types'
+import useUser from '@/hooks/useUser'
 import { toast } from 'sonner'
 
 export default function Navbar() {
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, loading } = useUser()
   const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => {
-    const supabase = createClient()
-
-    async function getUser() {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (authUser) {
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authUser.id)
-          .single()
-        setUser(data)
-      }
-      setLoading(false)
-    }
-
-    getUser()
-
-    // Listen for auth changes (login/logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      getUser()
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
 
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    setUser(null)
     toast.success('Logged out successfully')
     router.push('/')
     router.refresh()
