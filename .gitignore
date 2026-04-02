@@ -55,3 +55,39 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Vercel
+/.vercel
+.vercel
+
+# Supabase CLI local files and DB
+/.supabase
+supabase/.db
+supabase/.env
+
+# Local development and build caches
+/.output
+.cache
+/.turbo
+/.parcel-cache
+.vite
+
+# Serverless / deployment artifacts
+/.serverless
+
+# Firebase local emulators
+/.firebase
+
+# IDE/session specific
+*.sublime-workspace
+*.sublime-project
+.history/
+
+# ESLint cache
+.eslintcache
+
+# Optional: local secrets and service keys
+# (already ignored above but keep explicit)
+.env.local
+.env.*.local
+*SERVICE_ROLE_KEY*
