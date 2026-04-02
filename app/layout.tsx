@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import { Toaster } from 'sonner'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import Navbar from '@/components/Navbar'
+import { UserProvider } from '@/context/UserContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,12 +26,14 @@ export default function RootLayout({
             <div className="text-red-600">Application error. Please refresh the page.</div>
           </div>
         }>
-          <Navbar />
-          <main className="min-h-screen">
-            {children}
-          </main>
+          <UserProvider>
+            <Navbar />
+            <main className="min-h-screen">
+                {children}
+            </main>
+            <Toaster position="top-right" richColors />
+          </UserProvider>
         </ErrorBoundary>
-        <Toaster position="top-right" richColors />
       </body>
     </html>
   )

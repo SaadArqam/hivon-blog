@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
@@ -85,6 +86,8 @@ export default function NewPostPage() {
           ? 'Post published with AI summary!'
           : 'Draft saved!'
       )
+      
+      // Navigate to post listing or the new story page
       router.push('/blog/' + data.slug)
       router.refresh()
 
@@ -97,59 +100,50 @@ export default function NewPostPage() {
   const wordCount = form.body.trim().split(/\s+/).filter(Boolean).length
 
   return (
-    <div className="bg-gray-50">
-      <main className="max-w-3xl mx-auto px-4 py-10">
-        <div className="bg-white rounded-xl border shadow-sm p-8 space-y-6">
+    <div className="bg-white min-h-screen py-24 px-6">
+      <main className="max-w-2xl mx-auto space-y-16">
+        <header className="space-y-4 border-b border-gray-100 pb-12">
+            <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 leading-tight">Create a new story.</h1>
+            <p className="text-gray-500 text-lg">Share your ideas with the world.</p>
+        </header>
 
-          {/* Header */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Create New Post</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              An AI summary will be automatically generated when you publish
-            </p>
-          </div>
-
+        <div className="space-y-12">
           {/* Title */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Post Title *
-            </label>
+          <div className="space-y-4">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">Story Title</label>
             <Input
-              placeholder="Enter a compelling title..."
+              placeholder="Give your story a compelling title..."
               value={form.title}
               onChange={e => setForm({ ...form, title: e.target.value })}
-              className="text-lg"
+              className="text-2xl font-bold h-16 border-none px-0 focus-visible:ring-0 placeholder:text-gray-200"
             />
           </div>
 
           {/* Featured Image */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Featured Image
-            </label>
-            <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
+          <div className="space-y-4">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">Featured Image</label>
+            <div className="border border-dashed border-gray-100 rounded-2xl overflow-hidden bg-gray-50/50 p-8 transition-colors hover:border-gray-300">
               {imageUrl ? (
-                <div className="space-y-3">
+                <div className="space-y-6 text-center">
                   <img
                     src={imageUrl}
                     alt="Featured"
-                    className="w-full h-48 object-cover rounded-lg"
+                    className="w-full h-64 object-cover rounded-xl shadow-sm"
                   />
                   <button
                     onClick={() => setImageUrl('')}
-                    className="text-sm text-red-500 hover:underline"
+                    className="text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-600 transition-colors"
                   >
                     Remove image
                   </button>
                 </div>
               ) : (
-                <div>
-                  <p className="text-4xl mb-2">🖼️</p>
-                  <p className="text-sm text-gray-500 mb-3">
-                    Upload a featured image for your post
+                <div className="text-center space-y-4">
+                  <p className="text-sm text-gray-400">
+                    Upload a high-quality featured image for your story.
                   </p>
-                  <label className="cursor-pointer">
-                    <span className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">
+                  <label className="cursor-pointer inline-block">
+                    <span className="px-10 h-10 flex items-center justify-center bg-white border border-gray-100 shadow-sm rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 transition-colors">
                       {uploading ? 'Uploading...' : 'Choose Image'}
                     </span>
                     <input
@@ -166,57 +160,61 @@ export default function NewPostPage() {
           </div>
 
           {/* Body */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <label className="text-sm font-medium text-gray-700">
-                Post Content *
-              </label>
-              <span className="text-xs text-gray-400">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Story Content</label>
+              <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
                 {wordCount} words
               </span>
             </div>
             <textarea
-              placeholder="Write your post content here... (minimum 50 characters)"
+              placeholder="Once upon a time..."
               value={form.body}
               onChange={e => setForm({ ...form, body: e.target.value })}
-              rows={16}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={20}
+              className="w-full px-0 border-none text-gray-800 text-lg leading-relaxed focus:outline-none placeholder:text-gray-200 resize-none"
             />
           </div>
 
           {/* AI Notice */}
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex gap-3">
+          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6 flex items-start gap-4">
             <span className="text-xl">🤖</span>
-            <div>
-              <p className="text-sm font-medium text-blue-800">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-900">
                 AI Summary Generation
               </p>
-              <p className="text-xs text-blue-600 mt-0.5">
-                When you publish, Google Gemini will automatically generate
-                a ~200 word summary and store it. It will appear on the
-                post listing page for readers.
+              <p className="text-xs text-gray-500 leading-relaxed">
+                When you publish, Google Gemini will automatically analyze your content to generate an AI Insight summary.
               </p>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 justify-end pt-2">
-            <Button
-              variant="outline"
-              onClick={() => handleSubmit('draft')}
-              disabled={loading || uploading}
+          <footer className="flex flex-col-reverse sm:flex-row items-center justify-end gap-6 pt-12 border-t border-gray-100">
+            <button
+               onClick={() => router.back()}
+               className="text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:text-gray-900 transition-colors"
             >
-              Save as Draft
-            </Button>
-            <Button
-              onClick={() => handleSubmit('published')}
-              disabled={loading || uploading}
-              className="min-w-32"
-            >
-              {loading ? '✨ Publishing...' : 'Publish Post'}
-            </Button>
-          </div>
-
+                Cancel
+            </button>
+            <div className="flex gap-4 w-full sm:w-auto">
+               <Button
+                variant="outline"
+                onClick={() => handleSubmit('draft')}
+                disabled={loading || uploading}
+                className="flex-1 sm:flex-none border-gray-100 rounded-full h-12 px-8 text-[10px] font-bold uppercase tracking-widest"
+              >
+                Save as Draft
+              </Button>
+              <Button
+                onClick={() => handleSubmit('published')}
+                disabled={loading || uploading}
+                className="flex-1 sm:flex-none bg-gray-900 text-white rounded-full h-12 px-12 text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all"
+              >
+                {loading ? '...' : 'Publish Story'}
+              </Button>
+            </div>
+          </footer>
         </div>
       </main>
     </div>

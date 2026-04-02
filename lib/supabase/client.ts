@@ -1,30 +1,33 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createBrowserClient as createSupabaseBrowserClient } from '@supabase/ssr'
 import { isDevelopmentBypass } from '@/lib/devAuth'
 
+let client: any = null
+
 export function createClient() {
+  if (client) return client
+
   // In development with bypass enabled, return a mock client
   if (isDevelopmentBypass() && typeof window !== 'undefined') {
     const mockUser = localStorage.getItem('dev-auth-user')
     const mockToken = localStorage.getItem('dev-auth-token')
     
-    console.log('Mock client check - User:', mockUser, 'Token:', mockToken)
-    
     if (mockUser && mockToken) {
-      console.log('Creating mock Supabase client')
-      return createMockSupabaseClient(JSON.parse(mockUser), mockToken)
+      client = createMockSupabaseClient(JSON.parse(mockUser), mockToken)
+      return client
     }
   }
   
-  console.log('Creating real Supabase client')
-  return createBrowserClient(
+  client = createSupabaseBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
+  
+  return client
 }
 
-function createMockSupabaseClient(mockUser: unknown, _mockToken: string) {
+function createMockSupabaseClient(mockUser: any, _mockToken: string) {
   const createQueryBuilder = () => {
-    const builder = {
+    const builder: any = {
       select: () => builder,
       eq: () => builder,
       ilike: () => builder,
@@ -52,9 +55,9 @@ function createMockSupabaseClient(mockUser: unknown, _mockToken: string) {
         data: { subscription: { unsubscribe: () => {} } }
       })
     },
-  from: () => createQueryBuilder(),
+    from: () => createQueryBuilder(),
     storage: {
-  from: () => ({
+      from: () => ({
         upload: () => Promise.resolve({ data: { path: 'mock-path' }, error: null }),
         getPublicUrl: () => ({ data: { publicUrl: 'https://mock-url.com/image.jpg' } })
       })

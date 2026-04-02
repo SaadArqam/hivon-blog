@@ -1,152 +1,83 @@
-# Hivon Blog Platform
+# Hivon: AI-Powered Publishing Platform
 
-## Live Demo
-[URL here]
+Hivon is a high-performance, full-stack blogging platform built with Next.js and Supabase. It features an integrated AI summarization engine powered by Google Gemini, designed to provide concise "AI Insights" for every story.
 
-## Features
-- Role-based access control (Author / Viewer / Admin)
-- AI-powered post summaries via Google Gemini
-- Real-time comments with admin moderation
-- Image uploads via Supabase Storage
-- Full-text search + pagination
-- Admin dashboard
-- Draft / Publish toggle
-- Mobile responsive
+## 🛠️ Tech Stack
 
-## Tech Stack
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 14 App Router, TypeScript, Tailwind CSS, shadcn/ui |
-| Backend | Next.js API Routes, Supabase Auth, Supabase Database |
-| Storage | Supabase Storage (post-images bucket) |
-| AI | Google Gemini API (gemini-1.5-flash) |
-| UI/UX | Sonner toasts, responsive design |
-| Deployment | PM2 + Nginx (VPS) |
+- **Framework**: Next.js 15 (App Router, Server Components)
+- **Database & Auth**: Supabase (PostgreSQL + GoTrue)
+- **AI Engine**: Google Gemini Pro 1.5
+- **Styling**: Tailwind CSS v4 (Minimalist/Notion Aesthetic)
+- **Type Safety**: TypeScript
 
-## Architecture
-Next.js App Router provides both frontend and backend through API routes, eliminating the need for a separate Express server. Supabase handles authentication, database, and file storage with Row Level Security (RLS) policies enforcing role-based access at the database level. Google Gemini generates AI summaries once during post creation to optimize costs. Middleware protects routes based on user roles, while server components minimize client-side data fetching waterfalls.
+---
 
-## Local Setup
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up environment variables:
+## 🚀 Core Features
 
-| Variable | Description |
-|---|---|
-| NEXT_PUBLIC_SUPABASE_URL | Your Supabase project URL |
-| NEXT_PUBLIC_SUPABASE_ANON_KEY | Your Supabase anonymous key |
-| SUPABASE_SERVICE_ROLE_KEY | Your Supabase service role key |
-| GEMINI_API_KEY | Your Google Gemini API key |
-| NEXT_PUBLIC_APP_URL | Your application URL (e.g., http://localhost:3000) |
+### 👤 Identity & Role-Based Access Control (RBAC)
+Implemented a granular permission system with three distinct tiers:
+- **Viewer**: Can read, like, and participate in discussions.
+- **Author**: Can create and manage their own stories.
+- **Admin**: Full system oversight, including moderation and global content management.
 
-4. Run the development server: `npm run dev`
-5. Open http://localhost:3000 in your browser
+### ✍️ Intelligent Content Engine
+- **AI Summarization**: Every post undergoes an automated analysis via Gemini to generate a summary. This reduces reader cognitive load while maintaining the author's original intent.
+- **Performance-First CRUD**: Optimized data fetching using Next.js Server Components and selective client-side hydration for interactions.
 
-## Database Schema
+### 🔍 Discovery & Interaction
+- **Full-Text Search**: Client-side filtering combined with server-side pagination for low-latency discovery.
+- **Discussion System**: Nested comment threads with real-time optimistic updates and administrative moderation tools.
+- **Engagement Metrics**: Dynamic like system with debounce logic and state synchronization.
 
-### users table
-| Field | Type | Description |
-|---|---|---|
-| id | uuid | Primary key (auth user ID) |
-| name | text | User display name |
-| email | text | User email address |
-| role | enum | User role: 'viewer' | 'author' | 'admin' |
-| created_at | timestamp | Account creation timestamp |
+---
 
-### posts table
-| Field | Type | Description |
-|---|---|---|
-| id | uuid | Primary key |
-| title | text | Post title |
-| slug | text | URL-friendly slug |
-| body | text | Post content (markdown) |
-| image_url | text | Featured image URL (nullable) |
-| summary | text | AI-generated summary (nullable) |
-| author_id | uuid | Foreign key to users.id |
-| status | enum | Post status: 'draft' | 'published' |
-| created_at | timestamp | Post creation timestamp |
-| updated_at | timestamp | Last update timestamp |
+## 🧠 AI Strategy & Cost Optimization
 
-### comments table
-| Field | Type | Description |
-|---|---|---|
-| id | uuid | Primary key |
-| post_id | uuid | Foreign key to posts.id |
-| user_id | uuid | Foreign key to users.id |
-| comment_text | text | Comment content |
-| is_hidden | boolean | Admin moderation flag |
-| created_at | timestamp | Comment creation timestamp |
+### Gemini Integration
+The AI summarizes content during the post creation/edit lifecycle. Instead of real-time generation on every read, summaries are persisted in the database.
 
-## Deployment
+### Optimization Techniques
+- **Token Efficiency**: System prompts are highly specific to enforce concise output, minimizing token consumption and associated latency.
+- **Caching**: AI summaries are stored in the `posts` table, ensuring $0 incremental cost for repeat readers.
+- **Trigger-Based Generation**: Summarization only triggers on significant content changes (debounced or save-point based) to avoid redundant API calls.
 
-### PM2 + Nginx steps for VPS
-1. Install Node.js and PM2 on your VPS
-2. Clone and build the project:
-   ```bash
-   git clone <your-repo>
-   cd hivon-blog
-   npm install
-   npm run build
-   ```
-3. Set up production environment variables
-4. Start with PM2:
-   ```bash
-   pm2 start ecosystem.config.js
-   pm2 save
-   pm2 startup
-   ```
-5. Configure Nginx to proxy to port 3000
-6. Set up SSL certificate with Let's Encrypt
+---
 
-### ecosystem.config.js (PM2 config for VPS)
-```javascript
-module.exports = {
-  apps: [{
-    name: 'hivon-blog',
-    script: 'npm',
-    args: 'start',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3000
-    }
-  }]
-}
+## 🪜 Feature Logic & Architecture
+
+- **Hydration Resilience**: Implemented the "Mounted State Pattern" in navigation and interaction components to solve common SSR/Client mismatches caused by dynamic auth states.
+- **Optimistic UI**: Likes and comments use optimistic state updates with immediate rollback handled on failed network requests.
+- **Sanitized Rendering**: Used `isomorphic-dompurify` and custom escaping logic for the blog body to prevent XSS while allowing basic HTML formatting.
+
+---
+
+## 🚧 Engineering Challenges
+
+- **Hydration Synchronization**: Reconciling server-rendered layouts with client-side authentication states in Next.js 15 was solved by deferring specific DOM branches until the client mount phase.
+- **Supabase RBAC in SSR**: Since server components lack immediate access to the client-side session, a secure logic helper (`lib/rbac.ts`) was developed to validate permissions consistently across both RSC and Client components.
+
+---
+
+## ⚙️ Setup & Deployment
+
+### Environment Variables
+Create a `.env.local` with:
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+GOOGLE_GENERATIVE_AI_API_KEY=...
 ```
 
-### nginx.conf snippet
-```nginx
-server {
-    listen 80;
-    server_name your-domain-or-ip;
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
+### Local Development
+1. Install dependencies: `npm install`
+2. Run migrations: Use Supabase CLI or execute the `schema.sql` (if provided) in the SQL Editor.
+3. Start the server: `npm run dev`
 
-### .env.example
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-GEMINI_API_KEY=
-NEXT_PUBLIC_APP_URL=
-```
+### Deployment
+Optimized for **Vercel**. Ensure all environment variables are added to the Vercel dashboard. The project uses standard Build & Output settings.
 
-## AI Tool Used
-Windsurf — chosen for its inline AI chat, codebase awareness, and ability to generate full files with context. It helped scaffold components, debug RLS policies, and speed up repetitive boilerplate like API routes.
+---
 
-## Key Technical Decisions
-1. **Next.js App Router API routes as backend** - Eliminates need for separate Express server, reduces deployment complexity
-2. **RLS policies for database-level role enforcement** - Security at the data layer prevents unauthorized access even if API routes are compromised
-3. **AI summary generated ONCE on post creation and stored** - Minimizes API costs by never regenerating summaries on edits
-4. **Server components for data fetching** - Avoids client-side waterfalls and improves initial page load performance
-5. **Supabase Storage for images** - Provides scalable file storage with public URLs and built-in CDN
-
-## Bugs Encountered
-[Leave a placeholder — fill in a real bug you hit during development]
+## 📜 Professional Note
+This project was developed as a technical assessment focusing on clean architecture, minimal design aesthetics, and the practical application of LLMs in a product ecosystem.

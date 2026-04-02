@@ -1,9 +1,10 @@
- 'use client'
+'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal'
 
 interface DeletePostButtonProps {
   postId: string
@@ -13,9 +14,9 @@ interface DeletePostButtonProps {
 export default function DeletePostButton({ postId, variant = 'default' }: DeletePostButtonProps) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   async function handleDelete() {
-    if (!confirm('Delete this post? This action cannot be undone.')) return
     setDeleting(true)
     try {
       const res = await fetch('/api/posts/' + postId, { method: 'DELETE' })
@@ -23,28 +24,42 @@ export default function DeletePostButton({ postId, variant = 'default' }: Delete
 
       if (!res.ok) {
         toast.error(data.error || 'Failed to delete post')
-        setDeleting(false)
         return
       }
 
-      toast.success('Post deleted successfully')
+      toast.success('Story deleted successfully.')
       router.push('/')
       router.refresh()
     } catch (err) {
-      console.error('Delete error:', err)
-      toast.error('Something went wrong')
+      toast.error('Something went wrong during deletion.')
+    } finally {
       setDeleting(false)
+      setShowConfirm(false)
     }
   }
 
   return (
-    <Button
-      variant="destructive"
-      size={variant === 'small' ? 'sm' : 'default'}
-      disabled={deleting}
-      onClick={handleDelete}
-    >
-      {deleting ? 'Deleting...' : 'Delete Post'}
-    </Button>
+    <>
+      <Button
+        variant="destructive"
+        size={variant === 'small' ? 'sm' : 'default'}
+        disabled={deleting}
+        onClick={() => setShowConfirm(true)}
+        className="text-[10px] font-bold uppercase tracking-widest px-4 h-8 rounded-full"
+      >
+        {deleting ? '...' : (variant === 'small' ? 'Remove' : 'Delete Story')}
+      </Button>
+
+      <ConfirmationModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Permanently Delete Story?"
+        description="Are you sure you want to delete this story? This action cannot be reversed."
+        confirmText="Confirm Delete"
+        variant="destructive"
+      />
+    </>
   )
 }
