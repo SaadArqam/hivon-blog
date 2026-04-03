@@ -10,6 +10,13 @@
 
 ---
 
+## Admin Test Credentials
+
+email: admin@gmail.com
+password: 0987654321
+
+---
+
 ## The full project report can be found in this repository for a comprehensive overview of the system.
 
 📄 [View Technical Report](hivon_readme.pdf)
