@@ -10,10 +10,6 @@
 
 ---
 
-## Peoject Report
-
----
-
 ## Features
 
 - **Role-Based Access Control** — Three distinct roles: Author, Viewer, and Admin, enforced at UI, API route, and database (RLS) levels
