@@ -10,6 +10,10 @@
 
 ---
 
+## Peoject Report
+
+---
+
 ## Features
 
 - **Role-Based Access Control** — Three distinct roles: Author, Viewer, and Admin, enforced at UI, API route, and database (RLS) levels
@@ -39,7 +43,7 @@
 | AI Integration | Google Gemini API (gemini-1.5-flash) |
 | Notifications | Sonner (toast) |
 | Version Control | Git + GitHub |
-| Deployment | VPS + PM2 + Nginx |
+| Deployment | Vercel |
 
 ---
 
