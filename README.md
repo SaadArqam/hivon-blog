@@ -10,6 +10,12 @@
 
 ---
 
+The full project report can be found in this repository for a comprehensive overview of the system.
+
+📄 [View Technical Report](hivon_readme.pdf)
+
+📄 [View Short Explanation Report](Hivon_Technical_Report.pdf))
+
 ## Features
 
 - **Role-Based Access Control** — Three distinct roles: Author, Viewer, and Admin, enforced at UI, API route, and database (RLS) levels
