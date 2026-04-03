@@ -14,7 +14,7 @@ The full project report can be found in this repository for a comprehensive over
 
 📄 [View Technical Report](hivon_readme.pdf)
 
-📄 [View Short Explanation Report](Hivon_Technical_Report.pdf))
+📄 [View Short Explanation Report](Hivon_Technical_Report.pdf)
 
 ## Features
 
